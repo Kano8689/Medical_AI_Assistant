@@ -1,0 +1,49 @@
+train.py:
+       1	IMPORT LIBRARIES
+       2	SET SEEDS & CONFIG
+       3	COLLECT DATASET (FOLDER ALREADY PREPARED BEFORE THIS — THIS STEP IS REALLY YOUR DATA-COLLECTION/MERGE SCRIPT, SEPARATE FROM TRAIN.PY)
+       4	VERIFY & INVENTORY DATA (COUNT IMAGES, DETECT CORRUPT FILES)
+       5	EXPLORATORY DATA ANALYSIS (CLASS DISTRIBUTION, SAMPLE GRID, PIXEL INTENSITY HISTOGRAM)
+       6	SHOW ORIGINAL TRAINING IMAGES
+       7	HANDLE CORRUPT/INVALID FILES (SKIP UNREADABLE DURING LOADING)
+       8	OPENCV PREPROCESSING FUNCTION (DEFINE HERE — ALSO REUSED BY EVAL/TEST, SO PUT IN UTILS.PY)
+       9	TRAIN/VAL/TEST SPLIT (STRATIFIED)
+       10	COMPUTE CLASS WEIGHTS
+       11	DATA GENERATORS WITH AUGMENTATION
+       12	VISUALIZE AUGMENTATION (ONE SAMPLE IMAGE)
+       13	SHOW PREPROCESSED TRAINING IMAGES
+       14	BUILD CUSTOM CNN (4 CONV BLOCKS)
+       15	COMPILE MODEL
+       16	PRINT MODEL SUMMARY
+       17	SET UP CALLBACKS (EARLYSTOPPING, MODELCHECKPOINT, REDUCELRONPLATEAU, TENSORBOARD)
+       18	TRAIN MODEL (MODEL.FIT)
+       19	PLOT TRAINING CURVES (ACCURACY/LOSS/PRECISION/RECALL/F1 — TRAIN VS VAL)
+       20	LAUNCH/POINT TO TENSORBOARD LOGS
+       21	SAVE FINAL MODEL
+       25	SAVE CLASS LABEL MAPPING (CLASS_INDICES → JSON)
+
+evaluate.py:
+       1	Import libraries
+       22	Load best saved model
+       23	Evaluate on test set (predict → argmax)
+       24	Generate evaluation reports: classification report, confusion matrix heatmap, accuracy/precision/recall/F1 summary, ROC-AUC curve
+
+test.py:
+       1	Import libraries
+       22	Load best saved model (same loading logic as evaluate.py)
+       25	Load class label mapping (JSON saved from train.py)
+       26	Accept user input path (local path or URL → download if URL)
+       27	Preprocess input image (same preprocess_image() function)
+       28	Show original vs preprocessed test image
+       29	Prepare image for CNN (expand dims) + predict
+       30	Convert probability → class label
+       31	Display final result (image + predicted class + confidence)
+       32	(Optional) Grad-CAM overlay on the same image
+
+
+📄 utils.py (shared helper file — recommended addition)
+Put these here so all 3 scripts import from one place instead of duplicating code:
+preprocess_image() (Step 8)
+load_image_from_path_or_url() (Step 26)
+plot_original_vs_preprocessed() (Steps 6/13/28 reuse this)
+Config constants (IMG_SIZE, class names, model paths)
