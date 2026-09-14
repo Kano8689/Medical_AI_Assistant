@@ -43,7 +43,7 @@ NUM_CLASSES = len(CATEGORIES)
 # ******************************************************
 IMAGE_SIZE = 128
 BATCH_SIZE = 32
-EPOCHS = 30
+EPOCHS = 50
 
 # ----- TRAIN / VAL / TEST SPLIT -----
 TEST_SPLIT = 0.30
