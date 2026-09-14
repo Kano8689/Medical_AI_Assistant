@@ -23,7 +23,7 @@ from sklearn.metrics import (
 )
 from sklearn.preprocessing import label_binarize
 
-from global_variables import GRAPH_DIR, TRAINED_MODEL_PATH, CLASS_INDEX_FILE, DATASET_DIR, ACC_GRAPH, PRECISION_GRAPH, RECALL_GRAPH, F1_GRAPH, CM_GRAPH
+from global_variables import GRAPH_DIR, TRAINED_MODEL_PATH, CLASS_INDEX_FILE, DATASET_DIR, ACC_GRAPH, PRECISION_GRAPH, RECALL_GRAPH, F1_GRAPH, CM_GRAPH, TEST_SAVED_PATH
 from global_variables import start_partition, end_partition
 
 # **************************************
@@ -46,10 +46,8 @@ NUM_CLASSES = len(class_names)
 # **************************************
 # ===== STEP 3: LOAD TEST DATASET =====
 # **************************************
-test_saved_path = os.path.join(DATASET_DIR, "test_saved_data")
-
-X_test = np.load(os.path.join(test_saved_path, "X_test.npy"))
-y_test = np.load(os.path.join(test_saved_path, "y_test.npy"))
+X_test = np.load(os.path.join(TEST_SAVED_PATH, "X_test.npy"))
+y_test = np.load(os.path.join(TEST_SAVED_PATH, "y_test.npy"))
 
 start_partition("TEST DATASET")
 print(f"X_test Shape: {X_test.shape}")

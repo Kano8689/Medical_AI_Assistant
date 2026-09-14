@@ -30,7 +30,7 @@ from tensorflow.keras.callbacks import (
       TensorBoard, EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
 )
 
-from global_variables import DATASET_DIR, CATEGORIES, NUM_CLASSES
+from global_variables import DATASET_DIR, CATEGORIES, NUM_CLASSES, TEST_SAVED_PATH
 from global_variables import TEST_SPLIT, VAL_FROM_TEMP_SPLIT
 from global_variables import IMAGE_SIZE, BATCH_SIZE, EPOCHS, LEARNING_RATE, EARLY_STOPPING_PATIENCE
 from global_variables import LOG_DIR, GRAPH_DIR, CLASS_INDEX_FILE
@@ -441,16 +441,13 @@ end_partition()
 # ******************************************************
 # ===== STEP 16: SAVE TEST DATASET (for evaluate.py) =====
 # ******************************************************
-test_saved_path = os.path.join(DATASET_DIR, "test_saved_data")
 
-# shutil.rmtree (not os.removedirs) so it works even if the folder
-# already has files in it from a previous run.
-if os.path.exists(test_saved_path):
-    shutil.rmtree(test_saved_path)
-os.makedirs(test_saved_path)
+if os.path.exists(TEST_SAVED_PATH):
+    shutil.rmtree(TEST_SAVED_PATH)
+os.makedirs(TEST_SAVED_PATH)
 
-np.save(os.path.join(test_saved_path, "X_test.npy"), X_test)
-np.save(os.path.join(test_saved_path, "y_test.npy"), y_test)
+np.save(os.path.join(TEST_SAVED_PATH, "X_test.npy"), X_test)
+np.save(os.path.join(TEST_SAVED_PATH, "y_test.npy"), y_test)
 
 start_partition("TESTING DATASET SAVED")
 print("Test dataset saved successfully..!")

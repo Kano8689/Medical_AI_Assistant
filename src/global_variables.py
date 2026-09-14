@@ -21,6 +21,8 @@ SPLITED_TRAIN_DATASET = r"C:\\Users\Krishnam Mavani\Documents\Projects\Medical_A
 SPLITED_VAL_DATASET = r"C:\\Users\Krishnam Mavani\Documents\Projects\Medical_AI_Assistant\splited_dataset"
 SPLITED_TEST_DATASET = r"C:\\Users\Krishnam Mavani\Documents\Projects\Medical_AI_Assistant\splited_dataset"
 
+TEST_SAVED_PATH = r"C:\\Users\Krishnam Mavani\Documents\Projects\Medical_AI_Assistant\test_saved_data"
+
 CARDIOMEGALY = "CARDIOMEGALY"
 COVID19 = "COVID19"
 NORMAL = "NORMAL"
@@ -41,7 +43,7 @@ NUM_CLASSES = len(CATEGORIES)
 # ******************************************************
 IMAGE_SIZE = 128
 BATCH_SIZE = 32
-EPOCHS = 1
+EPOCHS = 30
 
 # ----- TRAIN / VAL / TEST SPLIT -----
 TEST_SPLIT = 0.30
