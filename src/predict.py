@@ -56,7 +56,7 @@ plt.show()
 # ****************************************
 # ===== STEP 5: PREPROCESS IMAGE =====
 # ****************************************
-Img_Size = gv.IMG_SIZE
+Img_Size = gv.IMAGE_SIZE
 
 img = cv2.resize(img, (Img_Size, Img_Size))
 img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)

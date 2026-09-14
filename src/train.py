@@ -1,311 +1,249 @@
 # ******************************************************
 # ===== STEP 1: IMPORT LIBRARIES =====
 # ******************************************************
-import global_variables as gv
-
 import os
 import cv2
-
-import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
-
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import classification_report
-
-from tensorflow.keras.callbacks import TensorBoard
 import datetime
 
+import numpy as np
+import pandas as pd
 import tensorflow as tf
+import matplotlib.pyplot as plt
+
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout, BatchNormalization
+from tensorflow.keras.layers import Conv2D, BatchNormalization, MaxPooling2D, Dropout, Flatten, Dense, Input
 
 from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.regularizers import l2
+from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau, TensorBoard
 
-from tensorflow.keras.applications import ResNet50
-from tensorflow.keras.applications.resnet50 import preprocess_input
-from tensorflow.keras.models import Model
-from tensorflow.keras.layers import GlobalAveragePooling2D
+from tensorflow.keras.metrics import Accuracy, Precision, Recall, AUC
+from sklearn.utils.class_weight import compute_class_weight
+
+from global_variables import DATASET_DIR, CATEGORIES
+from global_variables import SPLITED_TRAIN_DATASET, SPLITED_VAL_DATASET, SPLITED_TEST_DATASET
+from global_variables import IMAGE_SIZE, BATCH_SIZE, EPOCHS, LEARNING_RATE
+from global_variables import LOG_DIR, GRAPH_DIR
+from global_variables import SEED
+from global_variables import BEST_MODEL_PATH, FINAL_BEST_MODEL_PATH, TRAINED_MODEL_PATH
+
+from global_variables import set_seeds
+from global_variables import preprocessing_for_augmentation, preprocessing_images
+from global_variables import scan_dataset, split_train_validation_test
+from global_variables import plot_image_grid, plot_original_vs_processed, draw_data_plot, draw_histogram_plot
+from global_variables import save_class_indices_map
+from global_variables import start_partition, end_partition
 
 
 
 # ******************************************************
-# ===== STEP 2: SET DATASET PATHS =====
+# ===== STEP 2: REPRODUCIBILITY =====
 # ******************************************************
-categories = gv.CATEGORIES
-Img_Size = gv.IMG_SIZE
-Batch_Size = gv.BATCH_SIZE
+set_seeds()
+os.makedirs(BEST_MODEL_PATH, exist_ok=True)
+os.makedirs(LOG_DIR, exist_ok=True)
+
+
+# ******************************************************
+# ===== STEP 3: SCAN DATASET =====
+# ******************************************************
+start_partition("SCANNING DATASET")
+X, y, categories, currupted_files = scan_dataset(DATASET_DIR)
+NUM_OF_CATEGORIES = len(categories)
+print(f"Found NUM_OF_CATEGORIES: {NUM_OF_CATEGORIES}")
+print(f"Count of Currepted Files: {len(currupted_files)}")
+end_partition()
 
 
 
 # ******************************************************
-# ===== STEP 3: LOAD TRAINING/VALIDATION/TEST DATA =====
+# ===== STEP 4: CLASS DISTRIBUTION =====
 # ******************************************************
-data = []
-labels = []
+df = pd.DataFrame({"File":X, "Label":y})
+start_partition("CLASS DISTRIBUTION")
+print(df["Label"].value_counts())
 
-for label, can_name in enumerate(categories):
-    folder_path = os.path.join(f"{gv.DATASET_DIR}\{gv.DATASET_NAME}", can_name)
-    print(f"Working in the '{folder_path}' directory")
-    for img_name in os.listdir(folder_path):
-        img_path = os.path.join(folder_path, img_name)
-
-        try:
-            img = cv2.imread(img_path)
-            img = cv2.resize(img, (Img_Size, Img_Size))
-            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-
-            # L = Lightness (brightness) | A = Green ↔ Red | B = Blue ↔ Yellow
-            lab = cv2.cvtColor(img, cv2.COLOR_RGB2LAB)
-            l,a,b = cv2.split(lab)
-
-            # CLAHE (Contrast Limited Adaptive Histogram Equalization)
-            clahe = cv2.createCLAHE(clipLimit=2.0)
-            l = clahe.apply(l)
-
-            lab = cv2.merge((l,a,b))
-            img = cv2.cvtColor(lab, cv2.COLOR_LAB2RGB)
-
-            img = img.astype("float32")/255.0 # convert uint8 -> float32
+draw_data_plot((8, 5), df["Label"].value_counts(), ["Number of images", "Frequency", "Class Distribution (Raw Merged Dataset)"], "class_distribution.png", "bar")
+end_partition()
 
 
-            data.append(img)
-            labels.append(label)
 
-        except Exception as e:
-             print(f"ERROR LOADING IMAGE: {e} || IMAGE PATH: {img_path}")
+# ******************************************************
+# ===== STEP 5: SAMPLE IMAGES DISTRIBUTION =====
+# ******************************************************
+# sample_paths = df["File"].sample(min(25, len(df)), random_state=SEED)
+# intensities = []
+# for p in sample_paths:
+#       img = cv2.imread(p, cv2.IMREAD_GRAYSCALE)
+#       if img is not None:
+#             intensities.append(img.mean())
 
-X = np.array(data)
-y = np.array(labels)
+# draw_histogram_plot((8, 5), ["Pixel Intensity Distribution (sampled raw images)", "Mean pixel intensity", "Frequency"], "pixel_intensity_hist.png", 20 )
 
-X_train, X_temp, y_train, y_temp = train_test_split(
-     X, y,
-     test_size = 0.30,
-     random_state = 42
+
+
+# ******************************************************
+# ===== STEP 5: SHOW ORIGINAL IMAGES =====
+# ******************************************************
+sample_df = df.sample(16, random_state=SEED)
+original_images = [cv2.imread(p) for p in sample_df["File"]]
+plot_image_grid(original_images, titels=list(sample_df["Label"]), cols=4,
+                 main_title="Original Images (Before Preprocessing)")
+
+
+
+# ******************************************************
+# ===== STEP 5: SPLIT DATASET =====
+# ******************************************************
+train_df, val_df, test_df = split_train_validation_test(X, y)
+
+
+
+# ******************************************************
+# ===== STEP 5: HANDEL CLASS WEIGHT (IMBALANCED) =====
+# ******************************************************
+class_weights_arr = compute_class_weight(
+    class_weight="balanced",
+    classes=np.array(CATEGORIES),
+    y=train_df["Label"].values,
+)
+label_to_index = {label: idx for idx, label in enumerate(CATEGORIES)}
+class_weight_dict = {label_to_index[label]: w for label, w in zip(CATEGORIES, class_weights_arr)}
+print("Class weights:", class_weight_dict)
+
+
+
+# ******************************************************
+# ===== STEP 5: DATA AUGMENTATION/GENERATION =====
+# ******************************************************
+train_datagen = ImageDataGenerator(
+    preprocessing_function=preprocessing_for_augmentation,
+    rotation_range=15,
+    width_shift_range=0.1,
+    height_shift_range=0.1,
+    zoom_range=0.15,
+    horizontal_flip=True,
+    brightness_range=[0.85, 1.15],
 )
 
-X_test, X_val, y_test, y_val = train_test_split(
-     X_temp, y_temp,
-     test_size = 0.50,
-     random_state = 42
+val_test_datagen = ImageDataGenerator(
+    preprocessing_function=preprocessing_for_augmentation,
 )
 
-gv.start_partition("DATASET SHAPE")
-print(f"Original Dataset Shape: {X.shape}")
-print(f"X_train Dataset Shape: {X_train.shape}")
-print(f"X_test Dataset Shape: {X_test.shape}")
-print(f"X_val Dataset Shape: {X_val.shape}")
-gv.end_partition()
-
-
-
-# ******************************************************
-# ===== STEP 4:  IMAGE PREPROCESSING =====
-# ******************************************************
-
-# DATA AUGMENTATION
-data_gen = ImageDataGenerator(
-     rotation_range = 25,
-     zoom_range = 0.2,
-     width_shift_range = 0.2,
-     height_shift_range = 0.2,
-     horizontal_flip = True,
-     shear_range=0.15,
-     fill_mode="nearest"
+train_generator = train_datagen.flow_from_dataframe(
+    dataframe=train_df,
+    x_col="File",
+    y_col="Label",
+    target_size=(IMAGE_SIZE, IMAGE_SIZE),
+    batch_size=BATCH_SIZE,
+    class_mode="categorical",
+    classes=categories,
+    shuffle=True,
+    seed=SEED,
 )
-data_gen.fit(X_train)
 
-# DATA AUGMENTATION GRAPH
-sample = X_train[:1]
-fig = plt.figure(figsize=(12,6))
-for i in range(6):
-    aug = next(data_gen.flow(sample, batch_size=1))[0]
-
-    plt.subplot(2,3,i+1)
-    plt.imshow(aug)
-    plt.axis("off")
-
-plt.title("Augmentation Graph")
-plt.tight_layout()
-plt.show()
-
-
-
-# ******************************************************
-# ===== STEP 5: BUILD MODEL =====
-# ******************************************************
-# ----- CNN MODEL -----
-model = Sequential()
-
-# BLOCK 1
-model.add(
-      Conv2D(
-            32,
-            (3, 3),
-            activation='relu',
-            kernel_regularizer=l2(0.001),
-            input_shape=(Img_Size, Img_Size, 3)
-    )
-)
-model.add(BatchNormalization())
-model.add(MaxPooling2D((2,2)))
-model.add(Dropout(0.25))
-
-# BLOCK 2
-model.add(
-      Conv2D(
-            64,
-            (3, 3),
-            activation='relu',
-            kernel_regularizer=l2(0.001)
-      )
-)
-model.add(BatchNormalization())
-model.add(MaxPooling2D((2,2)))
-model.add(Dropout(0.25))
-
-# BLOCK 3
-model.add(
-      Conv2D(
-            128,
-            (3, 3),
-            activation='relu',
-            kernel_regularizer=l2(0.001)
-      )
-)
-model.add(BatchNormalization())
-model.add(MaxPooling2D((2,2)))
-model.add(Dropout(0.25))
-
-
-# ----- FLATTEN -----
-model.add(Flatten())
-
-
-# ----- DENSE LAYER -----
-model.add(
-      Dense(
-            256,
-            activation="relu",
-            kernel_regularizer = l2(0.001)
-      )
-)
-model.add(BatchNormalization())
-model.add(Dropout(0.5))
-
-
-# ----- OUTPUT LAYER -----
-model.add(
-      Dense(
-            1,
-            activation="sigmoid"
-      )
+val_generator = val_test_datagen.flow_from_dataframe(
+    dataframe=val_df,
+    x_col="File",
+    y_col="Label",
+    target_size=(IMAGE_SIZE, IMAGE_SIZE),
+    batch_size=BATCH_SIZE,
+    class_mode="categorical",
+    classes=CATEGORIES,
+    shuffle=False,
 )
 
 
 
 # ******************************************************
-# ===== STEP 7: COMPILE MODEL =====
+# ===== STEP 5: SAVE CLASS INDEX MAPPING =====
 # ******************************************************
-
-# ----- LEARNING RATE -----
-learning_rate = 0.001
-optimizer = Adam(
-     learning_rate=learning_rate
-)
-
-
-# ----- COMPILE MODL -----
-model.compile(
-     optimizer = optimizer,
-     loss="binary_crossentropy",
-     metrics=["accuracy"]
-)
-
-
-# ----- SUMMARY -----
-gv.start_partition("MODEL SUMMARY")
-print(f"Model Summary:\n{model.summary()}")
-gv.end_partition()
+save_class_indices_map(train_generator.class_indices)
+print(f"Class indices: {train_generator.class_indices}")
 
 
 
 # ******************************************************
-# ===== STEP 8: TRAIN MODEL =====
+# ===== STEP 5: AUGEMENTATION VISUALIZATION =====
 # ******************************************************
-log_dir = gv.LOG_DIR +"/"+ datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+sample_img_path = train_df["File"].iloc[0]
+sample_img = cv2.imread(sample_img_path)
+sample_img_rgb = cv2.cvtColor(sample_img, cv2.COLOR_BGR2RGB)
+sample_img_rgb = cv2.resize(sample_img_rgb, (IMAGE_SIZE, IMAGE_SIZE))
 
-tensorboard = TensorBoard(
-    log_dir=log_dir,
-    histogram_freq=1
-)
+sample_batch = np.expand_dims(sample_img_rgb, axis=0)
+aug_iter = train_datagen.flow(sample_batch, batch_size=1)
 
+images = [sample_img]
+titles = ["Original"]
 
+for i in range(5):
+      aug_img_rgb = next(aug_iter)[0]
+    
+      # Scale float images back to [0, 255] range if datagen rescales (e.g. 1./255)
+      if aug_img_rgb.max() <= 1.0:
+            aug_img_rgb = aug_img_rgb * 255.0
 
-# ******************************************************
-# ===== STEP 8: TRAIN MODEL =====
-# ******************************************************
-Epocs = gv.EPOCHS
-train_model = model.fit(
-     data_gen.flow(
-            X_train,
-            y_train,
-            batch_size = Batch_Size
-     ),
-     epochs = Epocs,
-     validation_data=(X_val, y_val),
-     callbacks=[tensorboard]
-)
+      # Convert RGB back to BGR so plot_image_grid's cv2.cvtColor works correctly
+      aug_img_bgr = cv2.cvtColor(aug_img_rgb.astype("uint8"), cv2.COLOR_RGB2BGR)
+    
+      images.append(aug_img_bgr)
+      titles.append(f"Aug {i+1}")
 
-
-
-# ******************************************************
-# ===== STEP 9: PLOT ACCURACY/LOSS =====
-# ******************************************************
-# Accuracy
-plt.figure(figsize=(8,5))
-plt.plot(train_model.history["accuracy"])
-plt.plot(train_model.history["val_accuracy"])
-plt.title("Accuracy")
-plt.legend(["Train","Validation"])
-plt.show()
-
-# Loss
-plt.figure(figsize=(8,5))
-plt.plot(train_model.history["loss"])
-plt.plot(train_model.history["val_loss"])
-plt.title("Loss")
-plt.legend(["Train","Validation"])
-plt.show()
+plot_image_grid(imgs=images, titels=titles, cols=6, main_title="Augmentation Visualization (1 sample image)")
 
 
 
-# ******************************************************
-# ===== STEP 10: SAVE MODEL =====
-# ******************************************************
-model_path = os.path.join(gv.TRAINED_MODEL_PATH, gv.TRAINED_MODEL_NAME)
-model.save(model_path)
-
-gv.start_partition("TRAINED MODEL SAVED")
-print("\n Model Saved Successfull..!")
-gv.end_partition()
+# =========================================================
+# STEP 13: Show PREPROCESSED training images (same grid as Step 6)
+# =========================================================
+print("\n=== Showing preprocessed versions of the same images ===")
+processed_images = [preprocessing_images(img) for img in original_images]
+plot_image_grid(processed_images, titles=list(sample_df["label"]), cols=5,
+                 main_title="Preprocessed Images (After OpenCV Pipeline)")
 
 
 
-# ******************************************************
-# ===== STEP 11: SAVE TEST DATASET =====
-# ******************************************************
-test_saved_path = os.path.join(gv.DATASET_DIR, "test_saved_data")
+# =========================================================
+# STEP 14: Build CUSTOM CNN (4 conv blocks, no pretrained models)
+# =========================================================
+def build_cnn(input_shape, num_classes):
+    model = Sequential([
+        Input(shape=input_shape),
 
-if os.path.exists(test_saved_path):
-    os.removedirs(test_saved_path)
-os.makedirs(test_saved_path)
+        # Block 1
+        Conv2D(32, (3, 3), activation="relu", padding="same"),
+        BatchNormalization(),
+        MaxPooling2D(2, 2),
+        Dropout(0.25),
 
-np.save(f"{test_saved_path}\X_test.npy", X_test)
-np.save(f"{test_saved_path}\y_test.npy", y_test)
+        # Block 2
+        Conv2D(64, (3, 3), activation="relu", padding="same"),
+        BatchNormalization(),
+        MaxPooling2D(2, 2),
+        Dropout(0.25),
 
-gv.start_partition("TESTING DATASET SAVED")
-print("Test dataset saved successfully..!")
-gv.end_partition()
+        # Block 3
+        Conv2D(128, (3, 3), activation="relu", padding="same"),
+        BatchNormalization(),
+        MaxPooling2D(2, 2),
+        Dropout(0.3),
+
+        # Block 4
+        Conv2D(256, (3, 3), activation="relu", padding="same"),
+        BatchNormalization(),
+        MaxPooling2D(2, 2),
+        Dropout(0.3),
+
+        Flatten(),
+        Dense(256, activation="relu"),
+        Dropout(0.5),
+        Dense(num_classes, activation="softmax"),
+    ])
+    return model
+
+
+print("\n=== Building CNN ===")
+model = build_cnn(input_shape=(IMAGE_SIZE, IMAGE_SIZE, 3), num_classes=NUM_OF_CATEGORIES)
