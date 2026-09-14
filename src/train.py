@@ -1,249 +1,458 @@
 # ******************************************************
 # ===== STEP 1: IMPORT LIBRARIES =====
 # ******************************************************
+import global_variables as gv
+
 import os
+import json
+import shutil
 import cv2
-import datetime
+from collections import Counter
 
 import numpy as np
-import pandas as pd
-import tensorflow as tf
 import matplotlib.pyplot as plt
+import seaborn as sns
 
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
-
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Conv2D, BatchNormalization, MaxPooling2D, Dropout, Flatten, Dense, Input
-
-from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.regularizers import l2
-from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau, TensorBoard
-
-from tensorflow.keras.metrics import Accuracy, Precision, Recall, AUC
+from sklearn.model_selection import train_test_split
 from sklearn.utils.class_weight import compute_class_weight
 
-from global_variables import DATASET_DIR, CATEGORIES
-from global_variables import SPLITED_TRAIN_DATASET, SPLITED_VAL_DATASET, SPLITED_TEST_DATASET
-from global_variables import IMAGE_SIZE, BATCH_SIZE, EPOCHS, LEARNING_RATE
-from global_variables import LOG_DIR, GRAPH_DIR
-from global_variables import SEED
-from global_variables import BEST_MODEL_PATH, FINAL_BEST_MODEL_PATH, TRAINED_MODEL_PATH
+import datetime
 
-from global_variables import set_seeds
-from global_variables import preprocessing_for_augmentation, preprocessing_images
-from global_variables import scan_dataset, split_train_validation_test
-from global_variables import plot_image_grid, plot_original_vs_processed, draw_data_plot, draw_histogram_plot
-from global_variables import save_class_indices_map
-from global_variables import start_partition, end_partition
-
-
-
-# ******************************************************
-# ===== STEP 2: REPRODUCIBILITY =====
-# ******************************************************
-set_seeds()
-os.makedirs(BEST_MODEL_PATH, exist_ok=True)
-os.makedirs(LOG_DIR, exist_ok=True)
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout, BatchNormalization
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.regularizers import l2
+from tensorflow.keras.utils import to_categorical
+from tensorflow.keras.metrics import Precision, Recall, AUC
+from tensorflow.keras.callbacks import (
+      TensorBoard, EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
+)
+# NOTE: no pretrained/ResNet imports here - project rules require a
+# custom-built CNN, not a prebuilt architecture.
 
 
 # ******************************************************
-# ===== STEP 3: SCAN DATASET =====
+# ===== STEP 2: SET DATASET PATHS =====
 # ******************************************************
-start_partition("SCANNING DATASET")
-X, y, categories, currupted_files = scan_dataset(DATASET_DIR)
-NUM_OF_CATEGORIES = len(categories)
-print(f"Found NUM_OF_CATEGORIES: {NUM_OF_CATEGORIES}")
-print(f"Count of Currepted Files: {len(currupted_files)}")
-end_partition()
+categories = gv.CATEGORIES
+Img_Size = gv.IMG_SIZE
+Batch_Size = gv.BATCH_SIZE
+NUM_CLASSES = gv.NUM_CLASSES
 
-
-
-# ******************************************************
-# ===== STEP 4: CLASS DISTRIBUTION =====
-# ******************************************************
-df = pd.DataFrame({"File":X, "Label":y})
-start_partition("CLASS DISTRIBUTION")
-print(df["Label"].value_counts())
-
-draw_data_plot((8, 5), df["Label"].value_counts(), ["Number of images", "Frequency", "Class Distribution (Raw Merged Dataset)"], "class_distribution.png", "bar")
-end_partition()
-
+os.makedirs(gv.TRAINED_MODEL_PATH, exist_ok=True)
+os.makedirs(gv.GRAPH_DIR, exist_ok=True)
 
 
 # ******************************************************
-# ===== STEP 5: SAMPLE IMAGES DISTRIBUTION =====
+# ===== STEP 3: LOAD TRAINING/VALIDATION/TEST DATA =====
 # ******************************************************
-# sample_paths = df["File"].sample(min(25, len(df)), random_state=SEED)
-# intensities = []
-# for p in sample_paths:
-#       img = cv2.imread(p, cv2.IMREAD_GRAYSCALE)
-#       if img is not None:
-#             intensities.append(img.mean())
+data = []
+labels = []
 
-# draw_histogram_plot((8, 5), ["Pixel Intensity Distribution (sampled raw images)", "Mean pixel intensity", "Frequency"], "pixel_intensity_hist.png", 20 )
+# Keep a small sample of images BEFORE preprocessing and AFTER
+# preprocessing so we can show both grids later (rule #7).
+sample_originals = []
+sample_processed = []
+sample_labels_display = []
+MAX_DISPLAY_SAMPLES = 10
 
+corrupt_count = 0
+
+for label, can_name in enumerate(categories):
+    folder_path = os.path.join(gv.DATASET_DIR, gv.DATASET_NAME, can_name)
+    print(f"Working in the '{folder_path}' directory")
+    for img_name in os.listdir(folder_path):
+        img_path = os.path.join(folder_path, img_name)
+
+        try:
+            img = cv2.imread(img_path)
+            if img is None:
+                # cv2.imread silently returns None for unreadable/corrupt files
+                raise ValueError("cv2.imread returned None (corrupt or unreadable file)")
+
+            img = cv2.resize(img, (Img_Size, Img_Size))
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+            # Save a copy of the ORIGINAL (resized, RGB, but not yet
+            # contrast-enhanced/normalized) image for display purposes.
+            if len(sample_originals) < MAX_DISPLAY_SAMPLES:
+                sample_originals.append(img.copy())
+                sample_labels_display.append(can_name)
+
+            # L = Lightness (brightness) | A = Green <-> Red | B = Blue <-> Yellow
+            lab = cv2.cvtColor(img, cv2.COLOR_RGB2LAB)
+            l, a, b = cv2.split(lab)
+
+            # CLAHE (Contrast Limited Adaptive Histogram Equalization)
+            clahe = cv2.createCLAHE(clipLimit=2.0)
+            l = clahe.apply(l)
+
+            lab = cv2.merge((l, a, b))
+            img = cv2.cvtColor(lab, cv2.COLOR_LAB2RGB)
+
+            img = img.astype("float32") / 255.0  # convert uint8 -> float32
+
+            # Save a copy of the PREPROCESSED image (matches the same
+            # index/order as sample_originals above).
+            if len(sample_processed) < MAX_DISPLAY_SAMPLES:
+                sample_processed.append(img.copy())
+
+            data.append(img)
+            labels.append(label)
+
+        except Exception as e:
+            corrupt_count += 1
+            print(f"ERROR LOADING IMAGE: {e} || IMAGE PATH: {img_path}")
+
+X = np.array(data)
+y = np.array(labels)
+
+gv.start_partition("CORRUPT/UNREADABLE FILES")
+print(f"Total corrupt/unreadable files skipped: {corrupt_count}")
+gv.end_partition()
+
+# stratify=y keeps class ratios consistent across train/val/test,
+# which matters a lot once you have 5-6 (likely imbalanced) classes.
+X_train, X_temp, y_train, y_temp = train_test_split(
+     X, y,
+     test_size=gv.TEST_SPLIT,
+     random_state=42,
+     stratify=y
+)
+
+X_test, X_val, y_test, y_val = train_test_split(
+     X_temp, y_temp,
+     test_size=gv.VAL_FROM_TEMP_SPLIT,
+     random_state=42,
+     stratify=y_temp
+)
+
+gv.start_partition("DATASET SHAPE")
+print(f"Original Dataset Shape: {X.shape}")
+print(f"X_train Dataset Shape: {X_train.shape}")
+print(f"X_test Dataset Shape: {X_test.shape}")
+print(f"X_val Dataset Shape: {X_val.shape}")
+gv.end_partition()
 
 
 # ******************************************************
-# ===== STEP 5: SHOW ORIGINAL IMAGES =====
+# ===== STEP 4: EDA - CLASS DISTRIBUTION =====
 # ******************************************************
-sample_df = df.sample(16, random_state=SEED)
-original_images = [cv2.imread(p) for p in sample_df["File"]]
-plot_image_grid(original_images, titels=list(sample_df["Label"]), cols=4,
-                 main_title="Original Images (Before Preprocessing)")
+label_counts = Counter(labels)
+count_by_name = {categories[idx]: count for idx, count in label_counts.items()}
 
+gv.start_partition("CLASS DISTRIBUTION")
+for name, count in count_by_name.items():
+    print(f"{name}: {count}")
+gv.end_partition()
+
+plt.figure(figsize=(8, 5))
+plt.bar(count_by_name.keys(), count_by_name.values(), color="teal")
+plt.title("Class Distribution")
+plt.ylabel("Number of Images")
+plt.xticks(rotation=30)
+plt.tight_layout()
+plt.savefig(os.path.join(gv.GRAPH_DIR, gv.CLASS_DIST_GRAPH))
+plt.show()
 
 
 # ******************************************************
-# ===== STEP 5: SPLIT DATASET =====
+# ===== STEP 5: SHOW ORIGINAL vs PREPROCESSED IMAGES =====
 # ******************************************************
-train_df, val_df, test_df = split_train_validation_test(X, y)
+fig = plt.figure(figsize=(15, 6))
+for i in range(len(sample_originals)):
+    plt.subplot(2, MAX_DISPLAY_SAMPLES, i + 1)
+    plt.imshow(sample_originals[i])
+    plt.title(sample_labels_display[i], fontsize=8)
+    plt.axis("off")
 
+    plt.subplot(2, MAX_DISPLAY_SAMPLES, MAX_DISPLAY_SAMPLES + i + 1)
+    plt.imshow(sample_processed[i])
+    plt.axis("off")
+
+fig.text(0.5, 0.95, "Top row: Original | Bottom row: Preprocessed (CLAHE)", ha="center")
+plt.tight_layout()
+plt.savefig(os.path.join(gv.GRAPH_DIR, gv.ORIGINAL_IMAGES_GRAPH))
+plt.show()
 
 
 # ******************************************************
-# ===== STEP 5: HANDEL CLASS WEIGHT (IMBALANCED) =====
+# ===== STEP 6: CLASS WEIGHTS (handle imbalance) =====
 # ******************************************************
 class_weights_arr = compute_class_weight(
-    class_weight="balanced",
-    classes=np.array(CATEGORIES),
-    y=train_df["Label"].values,
+      class_weight="balanced",
+      classes=np.unique(y_train),
+      y=y_train
 )
-label_to_index = {label: idx for idx, label in enumerate(CATEGORIES)}
-class_weight_dict = {label_to_index[label]: w for label, w in zip(CATEGORIES, class_weights_arr)}
-print("Class weights:", class_weight_dict)
+class_weight_dict = {i: w for i, w in enumerate(class_weights_arr)}
 
+gv.start_partition("CLASS WEIGHTS")
+print(class_weight_dict)
+gv.end_partition()
 
 
 # ******************************************************
-# ===== STEP 5: DATA AUGMENTATION/GENERATION =====
+# ===== STEP 7: PREPARE LABELS FOR TRAINING =====
 # ******************************************************
-train_datagen = ImageDataGenerator(
-    preprocessing_function=preprocessing_for_augmentation,
-    rotation_range=15,
-    width_shift_range=0.1,
-    height_shift_range=0.1,
-    zoom_range=0.15,
-    horizontal_flip=True,
-    brightness_range=[0.85, 1.15],
+# 2 classes -> sigmoid + binary_crossentropy (labels stay as-is)
+# 3+ classes -> softmax + categorical_crossentropy (labels one-hot encoded)
+if NUM_CLASSES == 2:
+    OUTPUT_UNITS = 1
+    OUTPUT_ACTIVATION = "sigmoid"
+    LOSS_FN = "binary_crossentropy"
+    y_train_fit = y_train
+    y_val_fit = y_val
+else:
+    OUTPUT_UNITS = NUM_CLASSES
+    OUTPUT_ACTIVATION = "softmax"
+    LOSS_FN = "categorical_crossentropy"
+    y_train_fit = to_categorical(y_train, NUM_CLASSES)
+    y_val_fit = to_categorical(y_val, NUM_CLASSES)
+
+
+# ******************************************************
+# ===== STEP 8: IMAGE AUGMENTATION =====
+# ******************************************************
+data_gen = ImageDataGenerator(
+     rotation_range=25,
+     zoom_range=0.2,
+     width_shift_range=0.2,
+     height_shift_range=0.2,
+     horizontal_flip=True,
+     shear_range=0.15,
+     fill_mode="nearest"
+)
+data_gen.fit(X_train)
+
+# DATA AUGMENTATION GRAPH (rule #7: visualize augmentation of one image)
+sample = X_train[:1]
+fig = plt.figure(figsize=(12, 6))
+for i in range(6):
+    aug = next(data_gen.flow(sample, batch_size=1))[0]
+
+    plt.subplot(2, 3, i + 1)
+    plt.imshow(aug)
+    plt.axis("off")
+
+plt.suptitle("Augmentation Examples (1 sample image)")
+plt.tight_layout()
+plt.savefig(os.path.join(gv.GRAPH_DIR, gv.AUG_GRAPH))
+plt.show()
+
+
+# ******************************************************
+# ===== STEP 9: BUILD MODEL (custom CNN, 4 conv blocks) =====
+# ******************************************************
+model = Sequential()
+
+# BLOCK 1
+model.add(
+      Conv2D(
+            32, (3, 3), activation='relu',
+            kernel_regularizer=l2(0.001),
+            input_shape=(Img_Size, Img_Size, 3)
+      )
+)
+model.add(BatchNormalization())
+model.add(MaxPooling2D((2, 2)))
+model.add(Dropout(0.25))
+
+# BLOCK 2
+model.add(Conv2D(64, (3, 3), activation='relu', kernel_regularizer=l2(0.001)))
+model.add(BatchNormalization())
+model.add(MaxPooling2D((2, 2)))
+model.add(Dropout(0.25))
+
+# BLOCK 3
+model.add(Conv2D(128, (3, 3), activation='relu', kernel_regularizer=l2(0.001)))
+model.add(BatchNormalization())
+model.add(MaxPooling2D((2, 2)))
+model.add(Dropout(0.25))
+
+# BLOCK 4
+model.add(Conv2D(256, (3, 3), activation='relu', kernel_regularizer=l2(0.001)))
+model.add(BatchNormalization())
+model.add(MaxPooling2D((2, 2)))
+model.add(Dropout(0.3))
+
+# ----- FLATTEN -----
+model.add(Flatten())
+
+# ----- DENSE LAYER -----
+model.add(Dense(256, activation="relu", kernel_regularizer=l2(0.001)))
+model.add(BatchNormalization())
+model.add(Dropout(0.5))
+
+# ----- OUTPUT LAYER (dynamic: binary or multi-class) -----
+model.add(Dense(OUTPUT_UNITS, activation=OUTPUT_ACTIVATION))
+
+
+# ******************************************************
+# ===== STEP 10: COMPILE MODEL =====
+# ******************************************************
+learning_rate = 0.001
+optimizer = Adam(learning_rate=learning_rate)
+
+model.compile(
+     optimizer=optimizer,
+     loss=LOSS_FN,
+     metrics=[
+          "accuracy",
+          Precision(name="precision"),
+          Recall(name="recall"),
+          AUC(name="auc"),
+     ]
 )
 
-val_test_datagen = ImageDataGenerator(
-    preprocessing_function=preprocessing_for_augmentation,
+gv.start_partition("MODEL SUMMARY")
+model.summary()
+gv.end_partition()
+
+# Also save the summary to a text file
+summary_path = os.path.join(gv.GRAPH_DIR, "model_summary.txt")
+with open(summary_path, "w") as f:
+    model.summary(print_fn=lambda line: f.write(line + "\n"))
+
+
+# ******************************************************
+# ===== STEP 11: CALLBACKS =====
+# ******************************************************
+log_dir = gv.LOG_DIR + "/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+
+tensorboard_cb = TensorBoard(
+    log_dir=log_dir,
+    histogram_freq=1
 )
 
-train_generator = train_datagen.flow_from_dataframe(
-    dataframe=train_df,
-    x_col="File",
-    y_col="Label",
-    target_size=(IMAGE_SIZE, IMAGE_SIZE),
-    batch_size=BATCH_SIZE,
-    class_mode="categorical",
-    classes=categories,
-    shuffle=True,
-    seed=SEED,
+early_stopping_cb = EarlyStopping(
+    monitor="val_loss",
+    patience=gv.EARLY_STOPPING_PATIENCE,
+    restore_best_weights=True,
+    verbose=1
 )
 
-val_generator = val_test_datagen.flow_from_dataframe(
-    dataframe=val_df,
-    x_col="File",
-    y_col="Label",
-    target_size=(IMAGE_SIZE, IMAGE_SIZE),
-    batch_size=BATCH_SIZE,
-    class_mode="categorical",
-    classes=CATEGORIES,
-    shuffle=False,
+best_model_path = os.path.join(gv.TRAINED_MODEL_PATH, gv.BEST_MODEL_NAME)
+model_checkpoint_cb = ModelCheckpoint(
+    best_model_path,
+    monitor="val_accuracy",
+    save_best_only=True,
+    verbose=1
+)
+
+reduce_lr_cb = ReduceLROnPlateau(
+    monitor="val_loss",
+    factor=gv.REDUCE_LR_FACTOR,
+    patience=gv.REDUCE_LR_PATIENCE,
+    min_lr=gv.MIN_LR,
+    verbose=1
 )
 
 
+# ******************************************************
+# ===== STEP 12: TRAIN MODEL =====
+# ******************************************************
+Epocs = gv.EPOCHS
+train_model = model.fit(
+     data_gen.flow(
+            X_train,
+            y_train_fit,
+            batch_size=Batch_Size
+     ),
+     epochs=Epocs,
+     validation_data=(X_val, y_val_fit),
+     class_weight=class_weight_dict,
+     callbacks=[early_stopping_cb, model_checkpoint_cb, reduce_lr_cb, tensorboard_cb]
+)
+
 
 # ******************************************************
-# ===== STEP 5: SAVE CLASS INDEX MAPPING =====
+# ===== STEP 13: PLOT ACCURACY / LOSS / PRECISION / RECALL / F1 =====
 # ******************************************************
-save_class_indices_map(train_generator.class_indices)
-print(f"Class indices: {train_generator.class_indices}")
+def plot_metric(history, train_key, val_key, title, save_name):
+    plt.figure(figsize=(8, 5))
+    plt.plot(history.history[train_key])
+    plt.plot(history.history[val_key])
+    plt.title(title)
+    plt.xlabel("Epoch")
+    plt.ylabel(train_key)
+    plt.legend(["Train", "Validation"])
+    plt.tight_layout()
+    plt.savefig(os.path.join(gv.GRAPH_DIR, save_name))
+    plt.show()
 
+plot_metric(train_model, "accuracy", "val_accuracy",
+            "Training vs Validation Accuracy", gv.ACC_GRAPH)
+plot_metric(train_model, "loss", "val_loss",
+            "Training vs Validation Loss", gv.LOSS_GRAPH)
+plot_metric(train_model, "precision", "val_precision",
+            "Training vs Validation Precision", gv.PRECISION_GRAPH)
+plot_metric(train_model, "recall", "val_recall",
+            "Training vs Validation Recall", gv.RECALL_GRAPH)
+
+# F1 is not a direct Keras metric - compute it per epoch from precision & recall
+train_f1 = [
+    2 * p * r / (p + r + 1e-7)
+    for p, r in zip(train_model.history["precision"], train_model.history["recall"])
+]
+val_f1 = [
+    2 * p * r / (p + r + 1e-7)
+    for p, r in zip(train_model.history["val_precision"], train_model.history["val_recall"])
+]
+plt.figure(figsize=(8, 5))
+plt.plot(train_f1)
+plt.plot(val_f1)
+plt.title("Training vs Validation F1 Score")
+plt.xlabel("Epoch")
+plt.ylabel("F1 Score")
+plt.legend(["Train", "Validation"])
+plt.tight_layout()
+plt.savefig(os.path.join(gv.GRAPH_DIR, gv.F1_GRAPH))
+plt.show()
 
 
 # ******************************************************
-# ===== STEP 5: AUGEMENTATION VISUALIZATION =====
+# ===== STEP 14: SAVE FINAL MODEL =====
 # ******************************************************
-sample_img_path = train_df["File"].iloc[0]
-sample_img = cv2.imread(sample_img_path)
-sample_img_rgb = cv2.cvtColor(sample_img, cv2.COLOR_BGR2RGB)
-sample_img_rgb = cv2.resize(sample_img_rgb, (IMAGE_SIZE, IMAGE_SIZE))
+final_model_path = os.path.join(gv.TRAINED_MODEL_PATH, gv.TRAINED_MODEL_NAME)
+model.save(final_model_path)
 
-sample_batch = np.expand_dims(sample_img_rgb, axis=0)
-aug_iter = train_datagen.flow(sample_batch, batch_size=1)
-
-images = [sample_img]
-titles = ["Original"]
-
-for i in range(5):
-      aug_img_rgb = next(aug_iter)[0]
-    
-      # Scale float images back to [0, 255] range if datagen rescales (e.g. 1./255)
-      if aug_img_rgb.max() <= 1.0:
-            aug_img_rgb = aug_img_rgb * 255.0
-
-      # Convert RGB back to BGR so plot_image_grid's cv2.cvtColor works correctly
-      aug_img_bgr = cv2.cvtColor(aug_img_rgb.astype("uint8"), cv2.COLOR_RGB2BGR)
-    
-      images.append(aug_img_bgr)
-      titles.append(f"Aug {i+1}")
-
-plot_image_grid(imgs=images, titels=titles, cols=6, main_title="Augmentation Visualization (1 sample image)")
+gv.start_partition("FINAL MODEL SAVED")
+print(f"Final model saved to: {final_model_path}")
+print(f"Best model was saved (during training) to: {best_model_path}")
+gv.end_partition()
 
 
+# ******************************************************
+# ===== STEP 15: SAVE CLASS INDEX MAPPING =====
+# ******************************************************
+# Needed by predict.py / evaluate.py to convert a predicted index
+# back into a human-readable class name.
+class_index_path = os.path.join(gv.TRAINED_MODEL_PATH, gv.CLASS_INDEX_FILE)
+index_to_class = {i: name for i, name in enumerate(categories)}
+with open(class_index_path, "w") as f:
+    json.dump(index_to_class, f, indent=2)
 
-# =========================================================
-# STEP 13: Show PREPROCESSED training images (same grid as Step 6)
-# =========================================================
-print("\n=== Showing preprocessed versions of the same images ===")
-processed_images = [preprocessing_images(img) for img in original_images]
-plot_image_grid(processed_images, titles=list(sample_df["label"]), cols=5,
-                 main_title="Preprocessed Images (After OpenCV Pipeline)")
-
-
-
-# =========================================================
-# STEP 14: Build CUSTOM CNN (4 conv blocks, no pretrained models)
-# =========================================================
-def build_cnn(input_shape, num_classes):
-    model = Sequential([
-        Input(shape=input_shape),
-
-        # Block 1
-        Conv2D(32, (3, 3), activation="relu", padding="same"),
-        BatchNormalization(),
-        MaxPooling2D(2, 2),
-        Dropout(0.25),
-
-        # Block 2
-        Conv2D(64, (3, 3), activation="relu", padding="same"),
-        BatchNormalization(),
-        MaxPooling2D(2, 2),
-        Dropout(0.25),
-
-        # Block 3
-        Conv2D(128, (3, 3), activation="relu", padding="same"),
-        BatchNormalization(),
-        MaxPooling2D(2, 2),
-        Dropout(0.3),
-
-        # Block 4
-        Conv2D(256, (3, 3), activation="relu", padding="same"),
-        BatchNormalization(),
-        MaxPooling2D(2, 2),
-        Dropout(0.3),
-
-        Flatten(),
-        Dense(256, activation="relu"),
-        Dropout(0.5),
-        Dense(num_classes, activation="softmax"),
-    ])
-    return model
+gv.start_partition("CLASS INDEX MAPPING SAVED")
+print(index_to_class)
+gv.end_partition()
 
 
-print("\n=== Building CNN ===")
-model = build_cnn(input_shape=(IMAGE_SIZE, IMAGE_SIZE, 3), num_classes=NUM_OF_CATEGORIES)
+# ******************************************************
+# ===== STEP 16: SAVE TEST DATASET (for evaluate.py) =====
+# ******************************************************
+test_saved_path = os.path.join(gv.DATASET_DIR, "test_saved_data")
+
+# shutil.rmtree (not os.removedirs) so it works even if the folder
+# already has files in it from a previous run.
+if os.path.exists(test_saved_path):
+    shutil.rmtree(test_saved_path)
+os.makedirs(test_saved_path)
+
+np.save(os.path.join(test_saved_path, "X_test.npy"), X_test)
+np.save(os.path.join(test_saved_path, "y_test.npy"), y_test)
+
+gv.start_partition("TESTING DATASET SAVED")
+print("Test dataset saved successfully..!")
+gv.end_partition()
