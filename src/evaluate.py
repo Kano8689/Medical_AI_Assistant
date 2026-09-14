@@ -94,7 +94,7 @@ plt.ylabel("Score")
 plt.title("Accuracy Score")
 plt.text(0, accuracy + 0.02, f"{accuracy:.4f}", ha="center")
 plt.tight_layout()
-plt.savefig(os.path.join(GRAPH_DIR, ACC_GRAPH))
+plt.savefig(os.path.join(GRAPH_DIR, f"evaluation_{ACC_GRAPH}"))
 plt.show()
 
 # ----- PRECISION -----
@@ -108,7 +108,7 @@ plt.ylabel("Score")
 plt.title("Precision Score")
 plt.text(0, precision + 0.02, f"{precision:.4f}", ha="center")
 plt.tight_layout()
-plt.savefig(os.path.join(GRAPH_DIR, PRECISION_GRAPH))
+plt.savefig(os.path.join(GRAPH_DIR, f"evaluation_{PRECISION_GRAPH}"))
 plt.show()
 
 # ----- RECALL -----
@@ -122,7 +122,7 @@ plt.ylabel("Score")
 plt.title("Recall Score")
 plt.text(0, recall + 0.02, f"{recall:.4f}", ha="center")
 plt.tight_layout()
-plt.savefig(os.path.join(GRAPH_DIR, RECALL_GRAPH))
+plt.savefig(os.path.join(GRAPH_DIR, f"evaluation_{RECALL_GRAPH}"))
 plt.show()
 
 # ----- F1 SCORE (graph was missing before - added here) -----
@@ -136,7 +136,7 @@ plt.ylabel("Score")
 plt.title("F1 Score")
 plt.text(0, f1 + 0.02, f"{f1:.4f}", ha="center")
 plt.tight_layout()
-plt.savefig(os.path.join(GRAPH_DIR, F1_GRAPH))
+plt.savefig(os.path.join(GRAPH_DIR, f"evaluation_{F1_GRAPH}"))
 plt.show()
 
 # ----- CONFUSION MATRIX -----
@@ -156,7 +156,7 @@ plt.xlabel("Predicted")
 plt.ylabel("Actual")
 plt.title("Confusion Matrix")
 plt.tight_layout()
-plt.savefig(os.path.join(GRAPH_DIR, CM_GRAPH))
+plt.savefig(os.path.join(GRAPH_DIR, f"evaluation_{CM_GRAPH}"))
 plt.show()
 
 # ----- CLASSIFICATION REPORT -----

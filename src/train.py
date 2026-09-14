@@ -238,7 +238,7 @@ for i in range(6):
 
 plt.suptitle("Augmentation Examples (1 sample image)")
 plt.tight_layout()
-plt.savefig(os.path.join(GRAPH_DIR, AUG_GRAPH))
+plt.savefig(os.path.join(GRAPH_DIR, f"train_{AUG_GRAPH}"))
 plt.show()
 
 
@@ -364,7 +364,7 @@ train_model = model.fit(
      callbacks=[early_stopping_cb, model_checkpoint_cb, reduce_lr_cb, tensorboard_cb]
 )
 
-
+print(train_model.history)
 # ******************************************************
 # ===== STEP 13: PLOT ACCURACY / LOSS / PRECISION / RECALL / F1 =====
 # ******************************************************
@@ -381,13 +381,13 @@ def plot_metric(history, train_key, val_key, title, save_name):
     plt.show()
 
 plot_metric(train_model, "accuracy", "val_accuracy",
-            "Training vs Validation Accuracy", ACC_GRAPH)
+            "Training vs Validation Accuracy", f"train_{ACC_GRAPH}")
 plot_metric(train_model, "loss", "val_loss",
-            "Training vs Validation Loss", LOSS_GRAPH)
+            "Training vs Validation Loss", f"train_{LOSS_GRAPH}")
 plot_metric(train_model, "precision", "val_precision",
-            "Training vs Validation Precision", PRECISION_GRAPH)
+            "Training vs Validation Precision", f"train_{PRECISION_GRAPH}")
 plot_metric(train_model, "recall", "val_recall",
-            "Training vs Validation Recall", RECALL_GRAPH)
+            "Training vs Validation Recall", f"train_{RECALL_GRAPH}")
 
 # F1 is not a direct Keras metric - compute it per epoch from precision & recall
 train_f1 = [
@@ -406,7 +406,7 @@ plt.xlabel("Epoch")
 plt.ylabel("F1 Score")
 plt.legend(["Train", "Validation"])
 plt.tight_layout()
-plt.savefig(os.path.join(GRAPH_DIR, F1_GRAPH))
+plt.savefig(os.path.join(GRAPH_DIR, f"train_{F1_GRAPH}"))
 plt.show()
 
 

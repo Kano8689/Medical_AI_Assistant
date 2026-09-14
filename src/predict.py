@@ -5,6 +5,7 @@
 
 import os
 import json
+import requests
 import urllib.request
 import cv2
 import matplotlib.pyplot as plt
@@ -44,23 +45,51 @@ predict_image_path = input("Enter Your Image Path or URL to Classify: ").strip()
 # ****************************************
 # ===== STEP 4: LOAD IMAGE (downloads it first if it's a URL) =====
 # ****************************************
+# def load_image(path_or_url):
+#     if path_or_url.startswith("http://") or path_or_url.startswith("https://"):
+#         tmp_path = "temp_downloaded_image.jpg"
+#         urllib.request.urlretrieve(path_or_url, tmp_path)
+#         loaded = cv2.imread(tmp_path)
+#         os.remove(tmp_path)
+#         return loaded
+#     return cv2.imread(path_or_url)
 def load_image(path_or_url):
     if path_or_url.startswith("http://") or path_or_url.startswith("https://"):
-        tmp_path = "temp_downloaded_image.jpg"
-        urllib.request.urlretrieve(path_or_url, tmp_path)
-        loaded = cv2.imread(tmp_path)
-        os.remove(tmp_path)
-        return loaded
-    return cv2.imread(path_or_url)
+        response = requests.get(
+            path_or_url,
+            timeout=20
+        )
+
+        if response.status_code != 200:
+            raise Exception(f"Could not download image from {path_or_url}.")
+        
+        img_ary = np.frombuffer(
+            response.content,
+            np.uint8
+        )
+
+        img = cv2.imdecode(
+            img_ary,
+            cv2.IMREAD_COLOR
+        )
+
+        if img is None:
+            raise Exception(f"OpenCV Could Not Read Image From: {path_or_url}")
+
+        print(f"Image is downloaded successfully.")
+
+    else:
+        img = cv2.imread(path_or_url)
+
+        if img is None:
+            raise Exception(f"Could Not Read Image From: {path_or_url}")
+
+
+    return img
 
 img = load_image(predict_image_path)
-if img is None:
-      print("ERROR: Unable to load Image!")
-      exit()
-print("Image Loaded Successfully!")
-
 original_img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-
+# cv2.imshow(original_img_rgb)
 
 # ****************************************
 # ===== STEP 5: PREPROCESS IMAGE =====

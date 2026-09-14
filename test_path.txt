@@ -1,0 +1,5 @@
+CARDIOMEGALY: 
+COVID19: https://www.itnonline.com/sites/default/files/Chest.jpeg
+MORMAL: 
+PNEUMONIA: 
+TUBERCULOSIS: 
