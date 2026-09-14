@@ -1,7 +1,7 @@
 # ******************************************************
 # ===== STEP 1: IMPORT LIBRARIES =====
 # ******************************************************
-import global_variables as gv
+# import global_variables as gv
 
 import os
 import json
@@ -29,20 +29,20 @@ from tensorflow.keras.metrics import Precision, Recall, AUC
 from tensorflow.keras.callbacks import (
       TensorBoard, EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
 )
-# NOTE: no pretrained/ResNet imports here - project rules require a
-# custom-built CNN, not a prebuilt architecture.
+
+from global_variables import DATASET_DIR, CATEGORIES, NUM_CLASSES
+from global_variables import TEST_SPLIT, VAL_FROM_TEMP_SPLIT
+from global_variables import IMAGE_SIZE, BATCH_SIZE, EPOCHS, LEARNING_RATE, EARLY_STOPPING_PATIENCE
+from global_variables import LOG_DIR, GRAPH_DIR, CLASS_INDEX_FILE
+from global_variables import BEST_MODEL_PATH, FINAL_BEST_MODEL_PATH, TRAINED_MODEL_PATH
+from global_variables import ACC_GRAPH, PRECISION_GRAPH, RECALL_GRAPH, F1_GRAPH, LOSS_GRAPH, AUG_GRAPH, CLASS_DIST_GRAPH,ORIGINAL_IMAGES_GRAPH
+from global_variables import REDUCE_LR_FACTOR, REDUCE_LR_PATIENCE, MIN_LR
+from global_variables import start_partition, end_partition
 
 
 # ******************************************************
 # ===== STEP 2: SET DATASET PATHS =====
 # ******************************************************
-categories = gv.CATEGORIES
-Img_Size = gv.IMG_SIZE
-Batch_Size = gv.BATCH_SIZE
-NUM_CLASSES = gv.NUM_CLASSES
-
-os.makedirs(gv.TRAINED_MODEL_PATH, exist_ok=True)
-os.makedirs(gv.GRAPH_DIR, exist_ok=True)
 
 
 # ******************************************************
@@ -60,8 +60,8 @@ MAX_DISPLAY_SAMPLES = 10
 
 corrupt_count = 0
 
-for label, can_name in enumerate(categories):
-    folder_path = os.path.join(gv.DATASET_DIR, gv.DATASET_NAME, can_name)
+for label, cat_name in enumerate(CATEGORIES):
+    folder_path = os.path.join(DATASET_DIR, cat_name)
     print(f"Working in the '{folder_path}' directory")
     for img_name in os.listdir(folder_path):
         img_path = os.path.join(folder_path, img_name)
@@ -72,14 +72,14 @@ for label, can_name in enumerate(categories):
                 # cv2.imread silently returns None for unreadable/corrupt files
                 raise ValueError("cv2.imread returned None (corrupt or unreadable file)")
 
-            img = cv2.resize(img, (Img_Size, Img_Size))
+            img = cv2.resize(img, (IMAGE_SIZE, IMAGE_SIZE))
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
             # Save a copy of the ORIGINAL (resized, RGB, but not yet
             # contrast-enhanced/normalized) image for display purposes.
             if len(sample_originals) < MAX_DISPLAY_SAMPLES:
                 sample_originals.append(img.copy())
-                sample_labels_display.append(can_name)
+                sample_labels_display.append(cat_name)
 
             # L = Lightness (brightness) | A = Green <-> Red | B = Blue <-> Yellow
             lab = cv2.cvtColor(img, cv2.COLOR_RGB2LAB)
@@ -109,44 +109,44 @@ for label, can_name in enumerate(categories):
 X = np.array(data)
 y = np.array(labels)
 
-gv.start_partition("CORRUPT/UNREADABLE FILES")
+start_partition("CORRUPT/UNREADABLE FILES")
 print(f"Total corrupt/unreadable files skipped: {corrupt_count}")
-gv.end_partition()
+end_partition()
 
 # stratify=y keeps class ratios consistent across train/val/test,
 # which matters a lot once you have 5-6 (likely imbalanced) classes.
 X_train, X_temp, y_train, y_temp = train_test_split(
      X, y,
-     test_size=gv.TEST_SPLIT,
+     test_size=TEST_SPLIT,
      random_state=42,
      stratify=y
 )
 
 X_test, X_val, y_test, y_val = train_test_split(
      X_temp, y_temp,
-     test_size=gv.VAL_FROM_TEMP_SPLIT,
+     test_size=VAL_FROM_TEMP_SPLIT,
      random_state=42,
      stratify=y_temp
 )
 
-gv.start_partition("DATASET SHAPE")
+start_partition("DATASET SHAPE")
 print(f"Original Dataset Shape: {X.shape}")
 print(f"X_train Dataset Shape: {X_train.shape}")
 print(f"X_test Dataset Shape: {X_test.shape}")
 print(f"X_val Dataset Shape: {X_val.shape}")
-gv.end_partition()
+end_partition()
 
 
 # ******************************************************
 # ===== STEP 4: EDA - CLASS DISTRIBUTION =====
 # ******************************************************
 label_counts = Counter(labels)
-count_by_name = {categories[idx]: count for idx, count in label_counts.items()}
+count_by_name = {CATEGORIES[idx]: count for idx, count in label_counts.items()}
 
-gv.start_partition("CLASS DISTRIBUTION")
+start_partition("CLASS DISTRIBUTION")
 for name, count in count_by_name.items():
     print(f"{name}: {count}")
-gv.end_partition()
+end_partition()
 
 plt.figure(figsize=(8, 5))
 plt.bar(count_by_name.keys(), count_by_name.values(), color="teal")
@@ -154,7 +154,7 @@ plt.title("Class Distribution")
 plt.ylabel("Number of Images")
 plt.xticks(rotation=30)
 plt.tight_layout()
-plt.savefig(os.path.join(gv.GRAPH_DIR, gv.CLASS_DIST_GRAPH))
+plt.savefig(os.path.join(GRAPH_DIR, CLASS_DIST_GRAPH))
 plt.show()
 
 
@@ -174,7 +174,7 @@ for i in range(len(sample_originals)):
 
 fig.text(0.5, 0.95, "Top row: Original | Bottom row: Preprocessed (CLAHE)", ha="center")
 plt.tight_layout()
-plt.savefig(os.path.join(gv.GRAPH_DIR, gv.ORIGINAL_IMAGES_GRAPH))
+plt.savefig(os.path.join(GRAPH_DIR, ORIGINAL_IMAGES_GRAPH))
 plt.show()
 
 
@@ -188,9 +188,9 @@ class_weights_arr = compute_class_weight(
 )
 class_weight_dict = {i: w for i, w in enumerate(class_weights_arr)}
 
-gv.start_partition("CLASS WEIGHTS")
+start_partition("CLASS WEIGHTS")
 print(class_weight_dict)
-gv.end_partition()
+end_partition()
 
 
 # ******************************************************
@@ -238,7 +238,7 @@ for i in range(6):
 
 plt.suptitle("Augmentation Examples (1 sample image)")
 plt.tight_layout()
-plt.savefig(os.path.join(gv.GRAPH_DIR, gv.AUG_GRAPH))
+plt.savefig(os.path.join(GRAPH_DIR, AUG_GRAPH))
 plt.show()
 
 
@@ -252,7 +252,7 @@ model.add(
       Conv2D(
             32, (3, 3), activation='relu',
             kernel_regularizer=l2(0.001),
-            input_shape=(Img_Size, Img_Size, 3)
+            input_shape=(IMAGE_SIZE, IMAGE_SIZE, 3)
       )
 )
 model.add(BatchNormalization())
@@ -292,8 +292,7 @@ model.add(Dense(OUTPUT_UNITS, activation=OUTPUT_ACTIVATION))
 # ******************************************************
 # ===== STEP 10: COMPILE MODEL =====
 # ******************************************************
-learning_rate = 0.001
-optimizer = Adam(learning_rate=learning_rate)
+optimizer = Adam(learning_rate=LEARNING_RATE)
 
 model.compile(
      optimizer=optimizer,
@@ -306,20 +305,20 @@ model.compile(
      ]
 )
 
-gv.start_partition("MODEL SUMMARY")
+start_partition("MODEL SUMMARY")
 model.summary()
-gv.end_partition()
+end_partition()
 
 # Also save the summary to a text file
-summary_path = os.path.join(gv.GRAPH_DIR, "model_summary.txt")
-with open(summary_path, "w") as f:
-    model.summary(print_fn=lambda line: f.write(line + "\n"))
+# summary_path = os.path.join(GRAPH_DIR, "model_summary.txt")
+# with open(summary_path, "w") as f:
+#     model.summary(print_fn=lambda line: f.write(line + "\n"))
 
 
 # ******************************************************
 # ===== STEP 11: CALLBACKS =====
 # ******************************************************
-log_dir = gv.LOG_DIR + "/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+log_dir = LOG_DIR + "/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 
 tensorboard_cb = TensorBoard(
     log_dir=log_dir,
@@ -328,12 +327,12 @@ tensorboard_cb = TensorBoard(
 
 early_stopping_cb = EarlyStopping(
     monitor="val_loss",
-    patience=gv.EARLY_STOPPING_PATIENCE,
+    patience=EARLY_STOPPING_PATIENCE,
     restore_best_weights=True,
     verbose=1
 )
 
-best_model_path = os.path.join(gv.TRAINED_MODEL_PATH, gv.BEST_MODEL_NAME)
+best_model_path = os.path.join(BEST_MODEL_PATH)
 model_checkpoint_cb = ModelCheckpoint(
     best_model_path,
     monitor="val_accuracy",
@@ -343,9 +342,9 @@ model_checkpoint_cb = ModelCheckpoint(
 
 reduce_lr_cb = ReduceLROnPlateau(
     monitor="val_loss",
-    factor=gv.REDUCE_LR_FACTOR,
-    patience=gv.REDUCE_LR_PATIENCE,
-    min_lr=gv.MIN_LR,
+    factor=REDUCE_LR_FACTOR,
+    patience=REDUCE_LR_PATIENCE,
+    min_lr=MIN_LR,
     verbose=1
 )
 
@@ -353,14 +352,13 @@ reduce_lr_cb = ReduceLROnPlateau(
 # ******************************************************
 # ===== STEP 12: TRAIN MODEL =====
 # ******************************************************
-Epocs = gv.EPOCHS
 train_model = model.fit(
      data_gen.flow(
             X_train,
             y_train_fit,
-            batch_size=Batch_Size
+            batch_size=BATCH_SIZE
      ),
-     epochs=Epocs,
+     epochs=EPOCHS,
      validation_data=(X_val, y_val_fit),
      class_weight=class_weight_dict,
      callbacks=[early_stopping_cb, model_checkpoint_cb, reduce_lr_cb, tensorboard_cb]
@@ -379,17 +377,17 @@ def plot_metric(history, train_key, val_key, title, save_name):
     plt.ylabel(train_key)
     plt.legend(["Train", "Validation"])
     plt.tight_layout()
-    plt.savefig(os.path.join(gv.GRAPH_DIR, save_name))
+    plt.savefig(os.path.join(GRAPH_DIR, save_name))
     plt.show()
 
 plot_metric(train_model, "accuracy", "val_accuracy",
-            "Training vs Validation Accuracy", gv.ACC_GRAPH)
+            "Training vs Validation Accuracy", ACC_GRAPH)
 plot_metric(train_model, "loss", "val_loss",
-            "Training vs Validation Loss", gv.LOSS_GRAPH)
+            "Training vs Validation Loss", LOSS_GRAPH)
 plot_metric(train_model, "precision", "val_precision",
-            "Training vs Validation Precision", gv.PRECISION_GRAPH)
+            "Training vs Validation Precision", PRECISION_GRAPH)
 plot_metric(train_model, "recall", "val_recall",
-            "Training vs Validation Recall", gv.RECALL_GRAPH)
+            "Training vs Validation Recall", RECALL_GRAPH)
 
 # F1 is not a direct Keras metric - compute it per epoch from precision & recall
 train_f1 = [
@@ -408,20 +406,20 @@ plt.xlabel("Epoch")
 plt.ylabel("F1 Score")
 plt.legend(["Train", "Validation"])
 plt.tight_layout()
-plt.savefig(os.path.join(gv.GRAPH_DIR, gv.F1_GRAPH))
+plt.savefig(os.path.join(GRAPH_DIR, F1_GRAPH))
 plt.show()
 
 
 # ******************************************************
 # ===== STEP 14: SAVE FINAL MODEL =====
 # ******************************************************
-final_model_path = os.path.join(gv.TRAINED_MODEL_PATH, gv.TRAINED_MODEL_NAME)
-model.save(final_model_path)
+print(TRAINED_MODEL_PATH)
+model.save(TRAINED_MODEL_PATH)
 
-gv.start_partition("FINAL MODEL SAVED")
-print(f"Final model saved to: {final_model_path}")
+start_partition("FINAL MODEL SAVED")
+print(f"Final model saved to: {TRAINED_MODEL_PATH}")
 print(f"Best model was saved (during training) to: {best_model_path}")
-gv.end_partition()
+end_partition()
 
 
 # ******************************************************
@@ -429,20 +427,21 @@ gv.end_partition()
 # ******************************************************
 # Needed by predict.py / evaluate.py to convert a predicted index
 # back into a human-readable class name.
-class_index_path = os.path.join(gv.TRAINED_MODEL_PATH, gv.CLASS_INDEX_FILE)
-index_to_class = {i: name for i, name in enumerate(categories)}
-with open(class_index_path, "w") as f:
+# class_index_path = os.path.join(gv.TRAINED_MODEL_PATH, gv.CLASS_INDEX_FILE)
+class_index_path = os.path.join(TRAINED_MODEL_PATH, CLASS_INDEX_FILE)
+index_to_class = {i: name for i, name in enumerate(CATEGORIES)}
+with open(CLASS_INDEX_FILE, "w") as f:
     json.dump(index_to_class, f, indent=2)
 
-gv.start_partition("CLASS INDEX MAPPING SAVED")
+start_partition("CLASS INDEX MAPPING SAVED")
 print(index_to_class)
-gv.end_partition()
+end_partition()
 
 
 # ******************************************************
 # ===== STEP 16: SAVE TEST DATASET (for evaluate.py) =====
 # ******************************************************
-test_saved_path = os.path.join(gv.DATASET_DIR, "test_saved_data")
+test_saved_path = os.path.join(DATASET_DIR, "test_saved_data")
 
 # shutil.rmtree (not os.removedirs) so it works even if the folder
 # already has files in it from a previous run.
@@ -453,6 +452,6 @@ os.makedirs(test_saved_path)
 np.save(os.path.join(test_saved_path, "X_test.npy"), X_test)
 np.save(os.path.join(test_saved_path, "y_test.npy"), y_test)
 
-gv.start_partition("TESTING DATASET SAVED")
+start_partition("TESTING DATASET SAVED")
 print("Test dataset saved successfully..!")
-gv.end_partition()
+end_partition()

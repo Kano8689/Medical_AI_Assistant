@@ -1,7 +1,7 @@
 # **************************************
 # ===== STEP 1: IMPORT LIBRARIES =====
 # **************************************
-import global_variables as gv
+# import global_variables as gv
 
 import os
 import json
@@ -23,19 +23,20 @@ from sklearn.metrics import (
 )
 from sklearn.preprocessing import label_binarize
 
+from global_variables import GRAPH_DIR, TRAINED_MODEL_PATH, CLASS_INDEX_FILE, DATASET_DIR, ACC_GRAPH, PRECISION_GRAPH, RECALL_GRAPH, F1_GRAPH, CM_GRAPH
+from global_variables import start_partition, end_partition
 
 # **************************************
 # ===== STEP 2: LOAD SAVED MODEL =====
 # **************************************
 # Evaluate the BEST model (same one predict.py uses), not the final-epoch model.
-model_path = os.path.join(gv.TRAINED_MODEL_PATH, gv.BEST_MODEL_NAME)
-model = tf.keras.models.load_model(model_path)
-gv.start_partition("MODEL LOADED")
+model = tf.keras.models.load_model(TRAINED_MODEL_PATH)
+start_partition("MODEL LOADED")
 print(model)
-gv.end_partition()
+end_partition()
 
 # Load class index mapping saved by train.py
-class_index_path = os.path.join(gv.TRAINED_MODEL_PATH, gv.CLASS_INDEX_FILE)
+class_index_path = os.path.join(TRAINED_MODEL_PATH, CLASS_INDEX_FILE)
 with open(class_index_path, "r") as f:
     index_to_class = {int(k): v for k, v in json.load(f).items()}
 class_names = [index_to_class[i] for i in range(len(index_to_class))]
@@ -45,15 +46,15 @@ NUM_CLASSES = len(class_names)
 # **************************************
 # ===== STEP 3: LOAD TEST DATASET =====
 # **************************************
-test_saved_path = os.path.join(gv.DATASET_DIR, "test_saved_data")
+test_saved_path = os.path.join(DATASET_DIR, "test_saved_data")
 
 X_test = np.load(os.path.join(test_saved_path, "X_test.npy"))
 y_test = np.load(os.path.join(test_saved_path, "y_test.npy"))
 
-gv.start_partition("TEST DATASET")
+start_partition("TEST DATASET")
 print(f"X_test Shape: {X_test.shape}")
 print(f"y_test Shape: {y_test.shape}")
-gv.end_partition()
+end_partition()
 
 
 # **************************************
@@ -71,16 +72,16 @@ else:
     y_pred = np.argmax(predictions, axis=1)
     avg_method = "weighted"
 
-gv.start_partition("PREDICTIONS")
+start_partition("PREDICTIONS")
 print(f"Predictions Shape: {predictions.shape}")
 print(f"Predicted Labels Shape: {y_pred.shape}")
-gv.end_partition()
+end_partition()
 
 
 # **************************************
 # ===== STEP 5: EVALUATION METRICS =====
 # **************************************
-gv.start_partition("EVALUATION METRICS")
+start_partition("EVALUATION METRICS")
 
 # ----- ACCURACY -----
 accuracy = accuracy_score(y_test, y_pred)
@@ -93,7 +94,7 @@ plt.ylabel("Score")
 plt.title("Accuracy Score")
 plt.text(0, accuracy + 0.02, f"{accuracy:.4f}", ha="center")
 plt.tight_layout()
-plt.savefig(os.path.join(gv.GRAPH_DIR, gv.ACC_GRAPH))
+plt.savefig(os.path.join(GRAPH_DIR, ACC_GRAPH))
 plt.show()
 
 # ----- PRECISION -----
@@ -107,7 +108,7 @@ plt.ylabel("Score")
 plt.title("Precision Score")
 plt.text(0, precision + 0.02, f"{precision:.4f}", ha="center")
 plt.tight_layout()
-plt.savefig(os.path.join(gv.GRAPH_DIR, gv.PRECISION_GRAPH))
+plt.savefig(os.path.join(GRAPH_DIR, PRECISION_GRAPH))
 plt.show()
 
 # ----- RECALL -----
@@ -121,7 +122,7 @@ plt.ylabel("Score")
 plt.title("Recall Score")
 plt.text(0, recall + 0.02, f"{recall:.4f}", ha="center")
 plt.tight_layout()
-plt.savefig(os.path.join(gv.GRAPH_DIR, gv.RECALL_GRAPH))
+plt.savefig(os.path.join(GRAPH_DIR, RECALL_GRAPH))
 plt.show()
 
 # ----- F1 SCORE (graph was missing before - added here) -----
@@ -135,7 +136,7 @@ plt.ylabel("Score")
 plt.title("F1 Score")
 plt.text(0, f1 + 0.02, f"{f1:.4f}", ha="center")
 plt.tight_layout()
-plt.savefig(os.path.join(gv.GRAPH_DIR, gv.F1_GRAPH))
+plt.savefig(os.path.join(GRAPH_DIR, F1_GRAPH))
 plt.show()
 
 # ----- CONFUSION MATRIX -----
@@ -155,14 +156,14 @@ plt.xlabel("Predicted")
 plt.ylabel("Actual")
 plt.title("Confusion Matrix")
 plt.tight_layout()
-plt.savefig(os.path.join(gv.GRAPH_DIR, gv.CM_GRAPH))
+plt.savefig(os.path.join(GRAPH_DIR, CM_GRAPH))
 plt.show()
 
 # ----- CLASSIFICATION REPORT -----
 cr = classification_report(y_test, y_pred, target_names=class_names, zero_division=0)
 print(f"Classification Report:\n{cr}")
 
-with open(os.path.join(gv.GRAPH_DIR, "classification_report.txt"), "w") as f:
+with open(os.path.join(GRAPH_DIR, "classification_report.txt"), "w") as f:
     f.write(cr)
 
 
@@ -186,7 +187,7 @@ if predictions.shape[-1] > 1:
     plt.title("ROC Curve (One-vs-Rest per Class)")
     plt.legend()
     plt.tight_layout()
-    plt.savefig(os.path.join(gv.GRAPH_DIR, "roc_curve.png"))
+    plt.savefig(os.path.join(GRAPH_DIR, "roc_curve.png"))
     plt.show()
 
-gv.end_partition()
+end_partition()

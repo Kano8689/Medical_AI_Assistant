@@ -1,7 +1,7 @@
 # ****************************************
 # ===== STEP 1: IMPORT LIBRARIES =====
 # ****************************************
-import global_variables as gv
+# import global_variables as gv
 
 import os
 import json
@@ -12,32 +12,27 @@ import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
 
-# NOTE: the old ResNet50 preprocess_input import is REMOVED on purpose.
-# train.py never used ResNet - it uses a custom CLAHE-based pipeline.
-# Using ResNet's preprocess_input here was a bug: it preprocessed
-# images completely differently than how the model was trained,
-# which silently produces wrong predictions.
-
+from global_variables import TRAINED_MODEL_PATH, CLASS_INDEX_FILE, IMAGE_SIZE, CATEGORIES
+from global_variables import start_partition, end_partition 
 
 # ****************************************
 # ===== STEP 2: LOAD SAVED MODEL =====
 # ****************************************
 # Loads the BEST model (saved by ModelCheckpoint during training),
 # not the final-epoch model, since best is usually more reliable.
-model_path = os.path.join(gv.TRAINED_MODEL_PATH, gv.BEST_MODEL_NAME)
-model = tf.keras.models.load_model(model_path)
-gv.start_partition("MODEL LOADED")
+model = tf.keras.models.load_model(TRAINED_MODEL_PATH)
+start_partition("MODEL LOADED")
 print(model)
-gv.end_partition()
+end_partition()
 
 # Load class index mapping saved by train.py (index -> class name)
-class_index_path = os.path.join(gv.TRAINED_MODEL_PATH, gv.CLASS_INDEX_FILE)
+class_index_path = os.path.join(TRAINED_MODEL_PATH, CLASS_INDEX_FILE)
 if os.path.exists(class_index_path):
     with open(class_index_path, "r") as f:
         index_to_class = {int(k): v for k, v in json.load(f).items()}
 else:
     # fallback: assume the order in global_variables.py matches training order
-    index_to_class = {i: name for i, name in enumerate(gv.CATEGORIES)}
+    index_to_class = {i: name for i, name in enumerate(CATEGORIES)}
 
 
 # ****************************************
@@ -73,9 +68,7 @@ original_img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 # This must be IDENTICAL to the preprocessing done in train.py,
 # otherwise the model receives data that doesn't match what it
 # learned from, and predictions become meaningless.
-Img_Size = gv.IMG_SIZE
-
-img = cv2.resize(img, (Img_Size, Img_Size))
+img = cv2.resize(img, (IMAGE_SIZE, IMAGE_SIZE))
 img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
 lab = cv2.cvtColor(img, cv2.COLOR_RGB2LAB)
@@ -137,10 +130,10 @@ answer = index_to_class[pred_index]
 # ****************************************
 # ===== STEP 8: DISPLAY FINAL RESULT =====
 # ****************************************
-gv.start_partition("FINAL RESULT")
+start_partition("FINAL RESULT")
 print(f"Predicted Class: {answer}")
 print(f"Confidence: {confidence * 100:.2f}%")
-gv.end_partition()
+end_partition()
 
 # Show the original image again with the predicted result as the title
 plt.figure(figsize=(5, 5))

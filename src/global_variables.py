@@ -14,12 +14,12 @@ def end_partition():
 # ******************************************************
 # ===== DATASET PATH =====
 # ******************************************************
-DATASET_DIR = r"C:\\Users\Krishnam Mavani\OneDrive\Documents\Projects\Medical_AI_Assistant\dataset"
-SPLITED_DATASET = "C:\\Users\Krishnam Mavani\OneDrive\Documents\Projects\Medical_AI_Assistant\splited_dataset"
+DATASET_DIR = r"C:\\Users\Krishnam Mavani\Documents\Projects\Medical_AI_Assistant\dataset"
+SPLITED_DATASET = r"C:\\Users\Krishnam Mavani\Documents\Projects\Medical_AI_Assistant\splited_dataset"
 
-SPLITED_TRAIN_DATASET = "C:\\Users\Krishnam Mavani\OneDrive\Documents\Projects\Medical_AI_Assistant\splited_dataset"
-SPLITED_VAL_DATASET = "C:\\Users\Krishnam Mavani\OneDrive\Documents\Projects\Medical_AI_Assistant\splited_dataset"
-SPLITED_TEST_DATASET = "C:\\Users\Krishnam Mavani\OneDrive\Documents\Projects\Medical_AI_Assistant\splited_dataset"
+SPLITED_TRAIN_DATASET = r"C:\\Users\Krishnam Mavani\Documents\Projects\Medical_AI_Assistant\splited_dataset"
+SPLITED_VAL_DATASET = r"C:\\Users\Krishnam Mavani\Documents\Projects\Medical_AI_Assistant\splited_dataset"
+SPLITED_TEST_DATASET = r"C:\\Users\Krishnam Mavani\Documents\Projects\Medical_AI_Assistant\splited_dataset"
 
 CARDIOMEGALY = "CARDIOMEGALY"
 COVID19 = "COVID19"
@@ -39,7 +39,7 @@ NUM_CLASSES = len(CATEGORIES)
 # ******************************************************
 # ===== PREPROCESS VARIABLES =====
 # ******************************************************
-IMG_SIZE = 128
+IMAGE_SIZE = 128
 BATCH_SIZE = 32
 EPOCHS = 1
 
@@ -52,11 +52,12 @@ EARLY_STOPPING_PATIENCE = 8
 REDUCE_LR_PATIENCE = 4
 REDUCE_LR_FACTOR = 0.5
 MIN_LR = 1e-7
+LEARNING_RATE = 0.001
 
 # ******************************************************
 # ===== GRAPH PATH =====
 # ******************************************************
-GRAPH_DIR = r"C:\\Users\Krishnam Mavani\OneDrive\Documents\Projects\Medical_AI_Assistant\graphs"
+GRAPH_DIR = r"C:\\Users\Krishnam Mavani\Documents\Projects\Medical_AI_Assistant\graphs"
 ACC_GRAPH = "accuracy_graph.png"
 LOSS_GRAPH = "loss_graph.png"
 PRECISION_GRAPH = "precision_graph.png"
@@ -73,11 +74,12 @@ TRAINNING_ACC = "Training_and_Validation_Accuracy.png"
 # ******************************************************
 # ===== TRAIN MODEL PATH =====
 # ******************************************************
-BEST_MODEL_PATH = r"C:\\Users\Krishnam Mavani\OneDrive\Documents\Projects\Medical_AI_Assistant\models\\best_model.h5"
-FINAL_BEST_MODEL_PATH = r"C:\\Users\Krishnam Mavani\OneDrive\Documents\Projects\Medical_AI_Assistant\models\final_model.h5"
-TRAINED_MODEL_PATH = r"C:\\Users\Krishnam Mavani\OneDrive\Documents\Projects\Medical_AI_Assistant\models\medical_ai_cnn.keras"
+BEST_MODEL_PATH = r"C:\Users\Krishnam Mavani\Documents\Projects\Medical_AI_Assistant\models\\best_model.keras"
+FINAL_BEST_MODEL_PATH = r"C:\\Users\Krishnam Mavani\Documents\Projects\Medical_AI_Assistant\models\final_model.keras"
+TRAINED_MODEL_PATH = r"C:\Users\Krishnam Mavani\Documents\Projects\Medical_AI_Assistant\models\medical_ai_cnn.keras"
 
 # ******************************************************
 # ===== LOG DIRECTORY PATH =====
 # ******************************************************
 LOG_DIR = "logs"
+CLASS_INDEX_FILE = r"C:\\Users\Krishnam Mavani\Documents\Projects\Medical_AI_Assistant\models\\class_indices.json"
