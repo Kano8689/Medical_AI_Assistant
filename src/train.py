@@ -244,7 +244,7 @@ plt.show()
 # ******************************************************
 # ===== STEP 9: BUILD MODEL (custom CNN, 4 conv blocks) =====
 # ******************************************************
-model = Sequential(
+model = Sequential([
     # BLOCK 1
     Conv2D(
             32,
@@ -292,7 +292,7 @@ model = Sequential(
 
     # ----- FLATTEN -----
     # Flatten(),
-    GlobalAveragePooling2D()
+    GlobalAveragePooling2D(),
 
     # ----- DENSE LAYER -----
     Dense(
@@ -305,7 +305,7 @@ model = Sequential(
 
     # ----- OUTPUT LAYER (dynamic: binary or multi-class) -----
     Dense(OUTPUT_UNITS, activation=OUTPUT_ACTIVATION)
-)
+])
 
 
 # ******************************************************
