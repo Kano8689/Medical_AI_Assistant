@@ -20,7 +20,7 @@ import datetime
 
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout, BatchNormalization
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout, BatchNormalization, GlobalAveragePooling2D
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.regularizers import l2
@@ -221,7 +221,6 @@ data_gen = ImageDataGenerator(
      width_shift_range=0.2,
      height_shift_range=0.2,
      horizontal_flip=True,
-     shear_range=0.15,
      fill_mode="nearest"
 )
 data_gen.fit(X_train)
@@ -245,48 +244,68 @@ plt.show()
 # ******************************************************
 # ===== STEP 9: BUILD MODEL (custom CNN, 4 conv blocks) =====
 # ******************************************************
-model = Sequential()
-
-# BLOCK 1
-model.add(
-      Conv2D(
-            32, (3, 3), activation='relu',
-            kernel_regularizer=l2(0.001),
+model = Sequential(
+    # BLOCK 1
+    Conv2D(
+            32,
+            (3, 3),
+            activation='relu',
+            kernel_regularizer=l2(0.0001),
             input_shape=(IMAGE_SIZE, IMAGE_SIZE, 3)
-      )
+    ),
+    BatchNormalization(),
+    MaxPooling2D((2, 2)),
+    Dropout(0.20),
+
+    # BLOCK 2
+    Conv2D(
+        64,
+        (3, 3),
+        activation='relu',
+        kernel_regularizer=l2(0.0001)
+    ),
+    BatchNormalization(),
+    MaxPooling2D((2, 2)),
+    Dropout(0.20),
+
+    # BLOCK 3
+    Conv2D(
+        128,
+        (3, 3),
+        activation='relu',
+        kernel_regularizer=l2(0.0001)
+    ),
+    BatchNormalization(),
+    MaxPooling2D((2, 2)),
+    Dropout(0.25),
+
+    # BLOCK 4
+    Conv2D(
+        256,
+        (3, 3),
+        activation='relu',
+        kernel_regularizer=l2(0.0001)
+    ),
+    BatchNormalization(),
+    MaxPooling2D((2, 2)),
+    Dropout(0.30),
+
+    # ----- FLATTEN -----
+    # Flatten(),
+    GlobalAveragePooling2D()
+
+    # ----- DENSE LAYER -----
+    Dense(
+        256,
+        activation="relu",
+        kernel_regularizer=l2(0.0001)
+    ),
+    # BatchNormalization(),
+    Dropout(0.40),
+
+    # ----- OUTPUT LAYER (dynamic: binary or multi-class) -----
+    Dense(OUTPUT_UNITS, activation=OUTPUT_ACTIVATION)
 )
-model.add(BatchNormalization())
-model.add(MaxPooling2D((2, 2)))
-model.add(Dropout(0.25))
-
-# BLOCK 2
-model.add(Conv2D(64, (3, 3), activation='relu', kernel_regularizer=l2(0.001)))
-model.add(BatchNormalization())
-model.add(MaxPooling2D((2, 2)))
-model.add(Dropout(0.25))
-
-# BLOCK 3
-model.add(Conv2D(128, (3, 3), activation='relu', kernel_regularizer=l2(0.001)))
-model.add(BatchNormalization())
-model.add(MaxPooling2D((2, 2)))
-model.add(Dropout(0.25))
-
-# BLOCK 4
-model.add(Conv2D(256, (3, 3), activation='relu', kernel_regularizer=l2(0.001)))
-model.add(BatchNormalization())
-model.add(MaxPooling2D((2, 2)))
-model.add(Dropout(0.3))
-
-# ----- FLATTEN -----
-model.add(Flatten())
-
-# ----- DENSE LAYER -----
-model.add(Dense(256, activation="relu", kernel_regularizer=l2(0.001)))
-model.add(BatchNormalization())
-model.add(Dropout(0.5))
-
-# ----- OUTPUT LAYER (dynamic: binary or multi-class) -----
-model.add(Dense(OUTPUT_UNITS, activation=OUTPUT_ACTIVATION))
 
 
 # ******************************************************
@@ -335,7 +354,8 @@ early_stopping_cb = EarlyStopping(
 best_model_path = os.path.join(BEST_MODEL_PATH)
 model_checkpoint_cb = ModelCheckpoint(
     best_model_path,
-    monitor="val_accuracy",
+    monitor="val_loss",
+    # monitor="val_accuracy",
     save_best_only=True,
     verbose=1
 )

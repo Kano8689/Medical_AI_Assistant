@@ -41,7 +41,7 @@ NUM_CLASSES = len(CATEGORIES)
 # ******************************************************
 # ===== PREPROCESS VARIABLES =====
 # ******************************************************
-IMAGE_SIZE = 128
+IMAGE_SIZE = 224
 BATCH_SIZE = 32
 EPOCHS = 50
 
@@ -51,10 +51,10 @@ VAL_FROM_TEMP_SPLIT = 0.50
 
 # ----- CALLBACK SETTINGS -----
 EARLY_STOPPING_PATIENCE = 8
-REDUCE_LR_PATIENCE = 4
+REDUCE_LR_PATIENCE = 3
 REDUCE_LR_FACTOR = 0.5
 MIN_LR = 1e-7
-LEARNING_RATE = 0.001
+LEARNING_RATE = 0.0005
 
 # ******************************************************
 # ===== GRAPH PATH =====
