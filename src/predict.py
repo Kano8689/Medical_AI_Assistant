@@ -1,8 +1,6 @@
 # ****************************************
 # ===== STEP 1: IMPORT LIBRARIES =====
 # ****************************************
-# import global_variables as gv
-
 import os
 import json
 import requests
@@ -16,11 +14,12 @@ import tensorflow as tf
 from global_variables import TRAINED_MODEL_PATH, CLASS_INDEX_FILE, IMAGE_SIZE, CATEGORIES
 from global_variables import start_partition, end_partition 
 
+
+
 # ****************************************
 # ===== STEP 2: LOAD SAVED MODEL =====
 # ****************************************
-# Loads the BEST model (saved by ModelCheckpoint during training),
-# not the final-epoch model, since best is usually more reliable.
+# Loads the BEST model (saved by ModelCheckpoint during training)
 model = tf.keras.models.load_model(TRAINED_MODEL_PATH)
 start_partition("MODEL LOADED")
 print(model)
@@ -36,23 +35,17 @@ else:
     index_to_class = {i: name for i, name in enumerate(CATEGORIES)}
 
 
+
 # ****************************************
 # ===== STEP 3: ASK FOR IMAGE PATH (local path OR website URL) =====
 # ****************************************
 predict_image_path = input("Enter Your Image Path or URL to Classify: ").strip()
 
 
+
 # ****************************************
 # ===== STEP 4: LOAD IMAGE (downloads it first if it's a URL) =====
 # ****************************************
-# def load_image(path_or_url):
-#     if path_or_url.startswith("http://") or path_or_url.startswith("https://"):
-#         tmp_path = "temp_downloaded_image.jpg"
-#         urllib.request.urlretrieve(path_or_url, tmp_path)
-#         loaded = cv2.imread(tmp_path)
-#         os.remove(tmp_path)
-#         return loaded
-#     return cv2.imread(path_or_url)
 def load_image(path_or_url):
     if path_or_url.startswith("http://") or path_or_url.startswith("https://"):
         response = requests.get(
@@ -91,12 +84,11 @@ img = load_image(predict_image_path)
 original_img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 # cv2.imshow(original_img_rgb)
 
+
+
 # ****************************************
 # ===== STEP 5: PREPROCESS IMAGE =====
 # ****************************************
-# This must be IDENTICAL to the preprocessing done in train.py,
-# otherwise the model receives data that doesn't match what it
-# learned from, and predictions become meaningless.
 img = cv2.resize(img, (IMAGE_SIZE, IMAGE_SIZE))
 img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
@@ -113,6 +105,7 @@ preprocessed_display = img.copy()  # uint8, for display
 
 img = img.astype("float32") / 255.0
 img = np.expand_dims(img, axis=0)
+
 
 
 # ****************************************
@@ -134,28 +127,18 @@ plt.tight_layout()
 plt.show()
 
 
+
 # ****************************************
 # ===== STEP 7: PREDICT =====
 # ****************************************
 prediction = model.predict(img)
-
-if prediction.shape[-1] == 1:
-    # Binary model (2 classes, sigmoid output)
-    probability = float(prediction[0][0])
-    if probability > 0.5:
-        pred_index = 1
-        confidence = probability
-    else:
-        pred_index = 0
-        confidence = 1 - probability
-else:
-    # Multi-class model (3+ classes, softmax output)
-    pred_index = int(np.argmax(prediction[0]))
-    confidence = float(prediction[0][pred_index])
+pred_index = int(np.argmax(prediction[0]))
+confidence = float(prediction[0][pred_index])
 
 answer = index_to_class[pred_index]
 
 
+ 
 # ****************************************
 # ===== STEP 8: DISPLAY FINAL RESULT =====
 # ****************************************

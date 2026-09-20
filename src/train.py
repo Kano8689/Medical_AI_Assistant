@@ -1,8 +1,6 @@
 # ******************************************************
 # ===== STEP 1: IMPORT LIBRARIES =====
 # ******************************************************
-# import global_variables as gv
-
 import os
 import json
 import shutil
@@ -26,9 +24,7 @@ from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.regularizers import l2
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.metrics import Precision, Recall, AUC
-from tensorflow.keras.callbacks import (
-      TensorBoard, EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
-)
+from tensorflow.keras.callbacks import TensorBoard, EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
 
 from global_variables import DATASET_DIR, CATEGORIES, NUM_CLASSES, TEST_SAVED_PATH
 from global_variables import TEST_SPLIT, VAL_FROM_TEMP_SPLIT
@@ -40,26 +36,19 @@ from global_variables import REDUCE_LR_FACTOR, REDUCE_LR_PATIENCE, MIN_LR
 from global_variables import start_partition, end_partition
 
 
-# ******************************************************
-# ===== STEP 2: SET DATASET PATHS =====
-# ******************************************************
-
 
 # ******************************************************
-# ===== STEP 3: LOAD TRAINING/VALIDATION/TEST DATA =====
+# ===== STEP 2: LOAD TRAINING/VALIDATION/TEST DATA =====
 # ******************************************************
 data = []
 labels = []
 
-# Keep a small sample of images BEFORE preprocessing and AFTER
-# preprocessing so we can show both grids later (rule #7).
 sample_originals = []
 sample_processed = []
 sample_labels_display = []
 MAX_DISPLAY_SAMPLES = 10
 
 corrupt_count = 0
-
 for label, cat_name in enumerate(CATEGORIES):
     folder_path = os.path.join(DATASET_DIR, cat_name)
     print(f"Working in the '{folder_path}' directory")
@@ -69,14 +58,13 @@ for label, cat_name in enumerate(CATEGORIES):
         try:
             img = cv2.imread(img_path)
             if img is None:
-                # cv2.imread silently returns None for unreadable/corrupt files
                 raise ValueError("cv2.imread returned None (corrupt or unreadable file)")
 
             img = cv2.resize(img, (IMAGE_SIZE, IMAGE_SIZE))
             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
-            # Save a copy of the ORIGINAL (resized, RGB, but not yet
-            # contrast-enhanced/normalized) image for display purposes.
+            # Save a copy of the ORIGINAL (resized, RGB, but not yet contrast-enhanced/normalized) 
+            # image for display purposes.
             if len(sample_originals) < MAX_DISPLAY_SAMPLES:
                 sample_originals.append(img.copy())
                 sample_labels_display.append(cat_name)
@@ -113,8 +101,7 @@ start_partition("CORRUPT/UNREADABLE FILES")
 print(f"Total corrupt/unreadable files skipped: {corrupt_count}")
 end_partition()
 
-# stratify=y keeps class ratios consistent across train/val/test,
-# which matters a lot once you have 5-6 (likely imbalanced) classes.
+# split train and temp from original
 X_train, X_temp, y_train, y_temp = train_test_split(
      X, y,
      test_size=TEST_SPLIT,
@@ -122,6 +109,7 @@ X_train, X_temp, y_train, y_temp = train_test_split(
      stratify=y
 )
 
+# split val and test from temp
 X_test, X_val, y_test, y_val = train_test_split(
      X_temp, y_temp,
      test_size=VAL_FROM_TEMP_SPLIT,
@@ -137,8 +125,9 @@ print(f"X_val Dataset Shape: {X_val.shape}")
 end_partition()
 
 
+
 # ******************************************************
-# ===== STEP 4: EDA - CLASS DISTRIBUTION =====
+# ===== STEP 3: EDA - CLASS DISTRIBUTION =====
 # ******************************************************
 label_counts = Counter(labels)
 count_by_name = {CATEGORIES[idx]: count for idx, count in label_counts.items()}
@@ -158,8 +147,9 @@ plt.savefig(os.path.join(GRAPH_DIR, CLASS_DIST_GRAPH))
 plt.show()
 
 
+
 # ******************************************************
-# ===== STEP 5: SHOW ORIGINAL vs PREPROCESSED IMAGES =====
+# ===== STEP 4: SHOW ORIGINAL vs PREPROCESSED IMAGES =====
 # ******************************************************
 fig = plt.figure(figsize=(15, 6))
 for i in range(len(sample_originals)):
@@ -178,8 +168,9 @@ plt.savefig(os.path.join(GRAPH_DIR, ORIGINAL_IMAGES_GRAPH))
 plt.show()
 
 
+
 # ******************************************************
-# ===== STEP 6: CLASS WEIGHTS (handle imbalance) =====
+# ===== STEP 5: CLASS WEIGHTS (handle imbalance) =====
 # ******************************************************
 class_weights_arr = compute_class_weight(
       class_weight="balanced",
@@ -193,27 +184,21 @@ print(class_weight_dict)
 end_partition()
 
 
+
 # ******************************************************
-# ===== STEP 7: PREPARE LABELS FOR TRAINING =====
+# ===== STEP 6: PREPARE LABELS FOR TRAINING =====
 # ******************************************************
-# 2 classes -> sigmoid + binary_crossentropy (labels stay as-is)
-# 3+ classes -> softmax + categorical_crossentropy (labels one-hot encoded)
-if NUM_CLASSES == 2:
-    OUTPUT_UNITS = 1
-    OUTPUT_ACTIVATION = "sigmoid"
-    LOSS_FN = "binary_crossentropy"
-    y_train_fit = y_train
-    y_val_fit = y_val
-else:
-    OUTPUT_UNITS = NUM_CLASSES
-    OUTPUT_ACTIVATION = "softmax"
-    LOSS_FN = "categorical_crossentropy"
-    y_train_fit = to_categorical(y_train, NUM_CLASSES)
-    y_val_fit = to_categorical(y_val, NUM_CLASSES)
+# > 2 classes -> softmax + categorical_crossentropy (labels one-hot encoded)
+OUTPUT_UNITS = NUM_CLASSES
+OUTPUT_ACTIVATION = "softmax"
+LOSS_FN = "categorical_crossentropy"
+y_train_fit = to_categorical(y_train, NUM_CLASSES)
+y_val_fit = to_categorical(y_val, NUM_CLASSES)
+
 
 
 # ******************************************************
-# ===== STEP 8: IMAGE AUGMENTATION =====
+# ===== STEP 7: IMAGE AUGMENTATION =====
 # ******************************************************
 data_gen = ImageDataGenerator(
      rotation_range=25,
@@ -225,7 +210,7 @@ data_gen = ImageDataGenerator(
 )
 data_gen.fit(X_train)
 
-# DATA AUGMENTATION GRAPH (rule #7: visualize augmentation of one image)
+# DATA AUGMENTATION GRAPH
 sample = X_train[:1]
 fig = plt.figure(figsize=(12, 6))
 for i in range(6):
@@ -241,8 +226,9 @@ plt.savefig(os.path.join(GRAPH_DIR, f"train_{AUG_GRAPH}"))
 plt.show()
 
 
+
 # ******************************************************
-# ===== STEP 9: BUILD MODEL (custom CNN, 4 conv blocks) =====
+# ===== STEP 8: BUILD MODEL (custom CNN, 4 conv blocks) =====
 # ******************************************************
 model = Sequential([
     # BLOCK 1
@@ -308,8 +294,9 @@ model = Sequential([
 ])
 
 
+
 # ******************************************************
-# ===== STEP 10: COMPILE MODEL =====
+# ===== STEP 9: COMPILE MODEL =====
 # ******************************************************
 optimizer = Adam(learning_rate=LEARNING_RATE)
 
@@ -328,14 +315,10 @@ start_partition("MODEL SUMMARY")
 model.summary()
 end_partition()
 
-# Also save the summary to a text file
-# summary_path = os.path.join(GRAPH_DIR, "model_summary.txt")
-# with open(summary_path, "w") as f:
-#     model.summary(print_fn=lambda line: f.write(line + "\n"))
 
 
 # ******************************************************
-# ===== STEP 11: CALLBACKS =====
+# ===== STEP 10: CALLBACKS =====
 # ******************************************************
 log_dir = LOG_DIR + "/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 
@@ -355,7 +338,6 @@ best_model_path = os.path.join(BEST_MODEL_PATH)
 model_checkpoint_cb = ModelCheckpoint(
     best_model_path,
     monitor="val_loss",
-    # monitor="val_accuracy",
     save_best_only=True,
     verbose=1
 )
@@ -369,8 +351,9 @@ reduce_lr_cb = ReduceLROnPlateau(
 )
 
 
+
 # ******************************************************
-# ===== STEP 12: TRAIN MODEL =====
+# ===== STEP 11: TRAIN MODEL =====
 # ******************************************************
 train_model = model.fit(
      data_gen.flow(
@@ -385,29 +368,39 @@ train_model = model.fit(
 )
 
 print(train_model.history)
+
+
+
 # ******************************************************
-# ===== STEP 13: PLOT ACCURACY / LOSS / PRECISION / RECALL / F1 =====
+# ===== STEP 12: PLOT ACCURACY / LOSS / PRECISION / RECALL / F1 =====
 # ******************************************************
-def plot_metric(history, train_key, val_key, title, save_name):
+def plot_metric(history, train_key, val_key, title, save_name, isDirect=False):
     plt.figure(figsize=(8, 5))
-    plt.plot(history.history[train_key])
-    plt.plot(history.history[val_key])
+
+    if isDirect:
+        plt.plot(train_key)
+        plt.plot(val_key)
+    else:
+        plt.plot(history.history[train_key])
+        plt.plot(history.history[val_key])
+
     plt.title(title)
     plt.xlabel("Epoch")
-    plt.ylabel(train_key)
+
+    if isDirect:
+        plt.ylabel(history)
+    else:
+        plt.ylabel(train_key)
+
     plt.legend(["Train", "Validation"])
     plt.tight_layout()
     plt.savefig(os.path.join(GRAPH_DIR, save_name))
     plt.show()
 
-plot_metric(train_model, "accuracy", "val_accuracy",
-            "Training vs Validation Accuracy", f"train_{ACC_GRAPH}")
-plot_metric(train_model, "loss", "val_loss",
-            "Training vs Validation Loss", f"train_{LOSS_GRAPH}")
-plot_metric(train_model, "precision", "val_precision",
-            "Training vs Validation Precision", f"train_{PRECISION_GRAPH}")
-plot_metric(train_model, "recall", "val_recall",
-            "Training vs Validation Recall", f"train_{RECALL_GRAPH}")
+plot_metric(train_model, "accuracy", "val_accuracy", "Training vs Validation Accuracy", f"train_{ACC_GRAPH}")
+plot_metric(train_model, "loss", "val_loss", "Training vs Validation Loss", f"train_{LOSS_GRAPH}")
+plot_metric(train_model, "precision", "val_precision", "Training vs Validation Precision", f"train_{PRECISION_GRAPH}")
+plot_metric(train_model, "recall", "val_recall", "Training vs Validation Recall", f"train_{RECALL_GRAPH}")
 
 # F1 is not a direct Keras metric - compute it per epoch from precision & recall
 train_f1 = [
@@ -418,20 +411,13 @@ val_f1 = [
     2 * p * r / (p + r + 1e-7)
     for p, r in zip(train_model.history["val_precision"], train_model.history["val_recall"])
 ]
-plt.figure(figsize=(8, 5))
-plt.plot(train_f1)
-plt.plot(val_f1)
-plt.title("Training vs Validation F1 Score")
-plt.xlabel("Epoch")
-plt.ylabel("F1 Score")
-plt.legend(["Train", "Validation"])
-plt.tight_layout()
-plt.savefig(os.path.join(GRAPH_DIR, f"train_{F1_GRAPH}"))
-plt.show()
+
+plot_metric("F1 Score", train_f1, val_f1, "Training vs Validation F1 Score", f"train_{ACC_GRAPH}", True)
+
 
 
 # ******************************************************
-# ===== STEP 14: SAVE FINAL MODEL =====
+# ===== STEP 13: SAVE FINAL MODEL =====
 # ******************************************************
 print(TRAINED_MODEL_PATH)
 model.save(TRAINED_MODEL_PATH)
@@ -442,8 +428,9 @@ print(f"Best model was saved (during training) to: {best_model_path}")
 end_partition()
 
 
+
 # ******************************************************
-# ===== STEP 15: SAVE CLASS INDEX MAPPING =====
+# ===== STEP 14: SAVE CLASS INDEX MAPPING =====
 # ******************************************************
 # Needed by predict.py / evaluate.py to convert a predicted index
 # back into a human-readable class name.
@@ -458,10 +445,10 @@ print(index_to_class)
 end_partition()
 
 
-# ******************************************************
-# ===== STEP 16: SAVE TEST DATASET (for evaluate.py) =====
-# ******************************************************
 
+# ******************************************************
+# ===== STEP 15: SAVE TEST DATASET (for evaluate.py) =====
+# ******************************************************
 if os.path.exists(TEST_SAVED_PATH):
     shutil.rmtree(TEST_SAVED_PATH)
 os.makedirs(TEST_SAVED_PATH)

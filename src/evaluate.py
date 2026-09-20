@@ -1,8 +1,6 @@
 # **************************************
 # ===== STEP 1: IMPORT LIBRARIES =====
 # **************************************
-# import global_variables as gv
-
 import os
 import json
 import numpy as np
@@ -11,16 +9,7 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-from sklearn.metrics import (
-      accuracy_score,
-      precision_score,
-      recall_score,
-      f1_score,
-      confusion_matrix,
-      classification_report,
-      roc_curve,
-      auc
-)
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix, classification_report, roc_curve, auc
 from sklearn.preprocessing import label_binarize
 
 from global_variables import GRAPH_DIR, TRAINED_MODEL_PATH, CLASS_INDEX_FILE, DATASET_DIR, ACC_GRAPH, PRECISION_GRAPH, RECALL_GRAPH, F1_GRAPH, CM_GRAPH, TEST_SAVED_PATH
@@ -59,16 +48,8 @@ end_partition()
 # ===== STEP 4: MAKE PREDICTIONS =====
 # **************************************
 predictions = model.predict(X_test)
-
-if predictions.shape[-1] == 1:
-    # Binary model
-    y_pred = (predictions >= 0.5).astype(int).flatten()
-    avg_method = "binary"
-else:
-    # Multi-class model - use argmax, and use "weighted" averaging
-    # for precision/recall/f1 since classes are likely imbalanced.
-    y_pred = np.argmax(predictions, axis=1)
-    avg_method = "weighted"
+y_pred = np.argmax(predictions, axis=1)
+avg_method = "weighted"
 
 start_partition("PREDICTIONS")
 print(f"Predictions Shape: {predictions.shape}")
@@ -79,63 +60,38 @@ end_partition()
 # **************************************
 # ===== STEP 5: EVALUATION METRICS =====
 # **************************************
+def plot_metric(bar, metrics, color, title, graph):
+    plt.figure(figsize=(4, 4))
+    plt.bar([bar], [metrics], color=color)
+    plt.ylim(0, 1)
+    plt.ylabel("Score")
+    plt.title(title)
+    plt.text(0, metrics + 0.02, f"{accuracy:.4f}", ha="center")
+    plt.tight_layout()
+    plt.savefig(os.path.join(GRAPH_DIR, f"evaluation_{graph}"))
+    plt.show()
+
 start_partition("EVALUATION METRICS")
 
 # ----- ACCURACY -----
 accuracy = accuracy_score(y_test, y_pred)
 print(f"Accuracy Score: {accuracy:.4f}")
-
-plt.figure(figsize=(4, 4))
-plt.bar(["Accuracy"], [accuracy], color="green")
-plt.ylim(0, 1)
-plt.ylabel("Score")
-plt.title("Accuracy Score")
-plt.text(0, accuracy + 0.02, f"{accuracy:.4f}", ha="center")
-plt.tight_layout()
-plt.savefig(os.path.join(GRAPH_DIR, f"evaluation_{ACC_GRAPH}"))
-plt.show()
+plot_metric("Accuracy", accuracy, "green", "Accuracy Score", ACC_GRAPH)
 
 # ----- PRECISION -----
 precision = precision_score(y_test, y_pred, average=avg_method, zero_division=0)
 print(f"Precision Score: {precision:.4f}")
-
-plt.figure(figsize=(4, 4))
-plt.bar(["Precision"], [precision], color="royalblue")
-plt.ylim(0, 1)
-plt.ylabel("Score")
-plt.title("Precision Score")
-plt.text(0, precision + 0.02, f"{precision:.4f}", ha="center")
-plt.tight_layout()
-plt.savefig(os.path.join(GRAPH_DIR, f"evaluation_{PRECISION_GRAPH}"))
-plt.show()
+plot_metric("Precision", precision, "royalblue", "Precision Score", PRECISION_GRAPH)
 
 # ----- RECALL -----
 recall = recall_score(y_test, y_pred, average=avg_method, zero_division=0)
 print(f"Recall Score: {recall:.4f}")
-
-plt.figure(figsize=(4, 4))
-plt.bar(["Recall"], [recall], color="orange")
-plt.ylim(0, 1)
-plt.ylabel("Score")
-plt.title("Recall Score")
-plt.text(0, recall + 0.02, f"{recall:.4f}", ha="center")
-plt.tight_layout()
-plt.savefig(os.path.join(GRAPH_DIR, f"evaluation_{RECALL_GRAPH}"))
-plt.show()
+plot_metric("Recall", recall, "orange", "Recall Score", RECALL_GRAPH)
 
 # ----- F1 SCORE (graph was missing before - added here) -----
 f1 = f1_score(y_test, y_pred, average=avg_method, zero_division=0)
 print(f"F1 Score: {f1:.4f}")
-
-plt.figure(figsize=(4, 4))
-plt.bar(["F1 Score"], [f1], color="purple")
-plt.ylim(0, 1)
-plt.ylabel("Score")
-plt.title("F1 Score")
-plt.text(0, f1 + 0.02, f"{f1:.4f}", ha="center")
-plt.tight_layout()
-plt.savefig(os.path.join(GRAPH_DIR, f"evaluation_{F1_GRAPH}"))
-plt.show()
+plot_metric("F1 Score", f1, "purple", "F1 Score", F1_GRAPH)
 
 # ----- CONFUSION MATRIX -----
 cm = confusion_matrix(y_test, y_pred)
@@ -170,22 +126,21 @@ with open(os.path.join(GRAPH_DIR, "classification_report.txt"), "w") as f:
 # **************************************
 # Only meaningful when the model outputs per-class probabilities
 # (multi-class softmax). Skipped for binary sigmoid models.
-if predictions.shape[-1] > 1:
-    y_test_bin = label_binarize(y_test, classes=list(range(NUM_CLASSES)))
+y_test_bin = label_binarize(y_test, classes=list(range(NUM_CLASSES)))
 
-    plt.figure(figsize=(8, 6))
-    for i, cname in enumerate(class_names):
-        fpr, tpr, _ = roc_curve(y_test_bin[:, i], predictions[:, i])
-        roc_auc = auc(fpr, tpr)
-        plt.plot(fpr, tpr, label=f"{cname} (AUC = {roc_auc:.2f})")
+plt.figure(figsize=(8, 6))
+for i, cname in enumerate(class_names):
+    fpr, tpr, _ = roc_curve(y_test_bin[:, i], predictions[:, i])
+    roc_auc = auc(fpr, tpr)
+    plt.plot(fpr, tpr, label=f"{cname} (AUC = {roc_auc:.2f})")
 
-    plt.plot([0, 1], [0, 1], "k--", label="Random guess")
-    plt.xlabel("False Positive Rate")
-    plt.ylabel("True Positive Rate")
-    plt.title("ROC Curve (One-vs-Rest per Class)")
-    plt.legend()
-    plt.tight_layout()
-    plt.savefig(os.path.join(GRAPH_DIR, "roc_curve.png"))
-    plt.show()
+plt.plot([0, 1], [0, 1], "k--", label="Random guess")
+plt.xlabel("False Positive Rate")
+plt.ylabel("True Positive Rate")
+plt.title("ROC Curve (One-vs-Rest per Class)")
+plt.legend()
+plt.tight_layout()
+plt.savefig(os.path.join(GRAPH_DIR, "roc_curve.png"))
+plt.show()
 
 end_partition()
