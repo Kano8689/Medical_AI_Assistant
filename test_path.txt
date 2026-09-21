@@ -67,7 +67,9 @@
 * BACKUP
       1. CARDIOMEGALY: https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ6_VORjCjpBRMP7tQE4BGzXTDPCya9LfPeC4pV7j36zkD18deQGMu35ws_&s=10
       2. COVID19: 
-      3. NORMAL: https://thumbs.dreamstime.com/b/chest-ray-normal-medical-concept-female-year-old-there-no-pulmonary-infiltration-heart-size-both-costophrenic-angles-138200478.jpg
+      3. NORMAL: https://www.kenhub.com/thumbor/AkXFsw0396y894sLEMWlcDuChJA=/fit-in/800x1600/filters:watermark(/images/logo_url.png,-10,-10,0):background_color(FFFFFF):format(jpeg)/images/library/10851/eXtmE1V2XgsjZK2JolVQ5g_Border_of_left_atrium.png
       4. PNEUMONIA: 
       5. TUBERCULOSIS: 
 
+
+      3. NORMAL: https://thumbs.dreamstime.com/b/chest-ray-normal-medical-concept-female-year-old-there-no-pulmonary-infiltration-heart-size-both-costophrenic-angles-138200478.jpg
