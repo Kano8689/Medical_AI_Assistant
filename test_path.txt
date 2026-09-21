@@ -8,16 +8,20 @@
 
 * TRUE PREDICTION:
       1. CARDIOMEGALY: https://prod-images-static.radiopaedia.org/images/24070732/b8abe6f1628931f37515588a9d4b52_big_gallery.jpeg
-      2. COVID19: https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTyCg2ux7q1ZyGN85rjzgxfOesLZVGA3eTXRy1G4jJmF6Vv4lKWcZ1I7bY&s=10
-      3. NORMAL: https://www.kenhub.com/thumbor/AkXFsw0396y894sLEMWlcDuChJA=/fit-in/800x1600/filters:watermark(/images/logo_url.png,-10,-10,0):background_color(FFFFFF):format(jpeg)/images/library/10851/eXtmE1V2XgsjZK2JolVQ5g_Border_of_left_atrium.png
-      4. PNEUMONIA: https://storage.googleapis.com/kagglesdsdata/datasets/17810/23812/chest_xray/val/PNEUMONIA/person1954_bacteria_4886.jpeg?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=databundle-worker-v2%40kaggle-161607.iam.gserviceaccount.com%2F20260913%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20260913T211107Z&X-Goog-Expires=345600&X-Goog-SignedHeaders=host&X-Goog-Signature=73a5c2729e4fbf477fc5be11c64fd093e5026dd8bc82c2af2904dab4b1f47f2d808e87392e865bc040d12becb150df27b599cd46e9edfea858acaaa0b7d456c61917a1b5288eedf4450893e58502ba4bbe76cc3c2d2513adb7f6acad85b2ea3d82d84e3e69ff390f7137f8786164a658e7730c670886ea782d375adff70f0d228386c7ec30b28f2b4e2900fdc000e128856163cbf98708c2d2f5d6ea6dc54baf6008996cba784685297dec8338ad626477e6fb9b858f2a34b5a1188e5e378d54aa90321759e11350c9d90522fe0c7a5806a4cdb94296751c39a9ff0eda1fc0f8427c753f74279ae7a81b07fd0c48fa57f658e8549b35b1f459bda2e490930f1e
-      5. TUBERCULOSIS: https://storage.googleapis.com/kagglesdsdata/datasets/891819/2332307/TB_Chest_Radiography_Database/Tuberculosis/Tuberculosis-105.png?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=databundle-worker-v2%40kaggle-161607.iam.gserviceaccount.com%2F20260914%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20260914T164844Z&X-Goog-Expires=345600&X-Goog-SignedHeaders=host&X-Goog-Signature=9460a63c9cf38d0e01ba558424d3435b79d8399c09bd2c5ee1c14c62076eec78431cc5f812075647c380a053e7bf7fde973388f651337f4d410a4d430b7bec13a16dfe8084a2bd440b5d58075f0f22f8603443bdcf47970c1402c0fb5719c2c97d4b15e2496acecd58bfa8cfd08a77ce06a459aa28d79d9672b9f8acf6ebd9e209f040ebfea0993fb89537aefcbc1554416796b1edb85ed8041c9821c76399aebf4158602cd0efe9dc05cfd97247b232fa0f2453f49337b27f21724b5f79b553984235b32350f47a730c97935d77939d3bd06952db0ba56142faf96b04e24ff6748a5f29558afaaa100ec304a11b6b72d85fdc0f6e811f1e5ecc899f096456ba
+      2. COVID19: 
+      3. NORMAL: https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTr3dETmNERqd8HQch6H8Xl-K5BodWSNpe0CKnODe4kTyNlKQ4-x-SKqFRZ&s=10
+      4. PNEUMONIA: 
+      5. TUBERCULOSIS: 
+
+
+      NORMAL: https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTr3dETmNERqd8HQch6H8Xl-K5BodWSNpe0CKnODe4kTyNlKQ4-x-SKqFRZ&s=10
+      
 
 
 * WRONG PREDICTION:
       1. CARDIOMEGALY: https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRJDNHNkgln9WSkayqDMUrLC0YkU-QBkRqlCjaMNJ8O5w&s=10 (TUBERCULOSIS)
       2. COVID19: https://www.itnonline.com/sites/default/files/Chest.jpeg (PNEUMONIA) | (NORMAL) | (CARDIOMEGALY)
-      3. NORMAL: https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTr3dETmNERqd8HQch6H8Xl-K5BodWSNpe0CKnODe4kTyNlKQ4-x-SKqFRZ&s=10 (TUBERCULOSIS)
+      3. NORMAL:  (TUBERCULOSIS)
       4. PNEUMONIA: https://prod-images-static.radiopaedia.org/images/1371188/0a1f5edc85aa58d5780928cb39b08659c1fc4d6d7c7dce2f8db1d63c7c737234_big_gallery.jpeg (CARDIOMEGALY)
       5. TUBERCULOSIS: https://prod-images-static.radiopaedia.org/images/56848814/miliary_TB_big_gallery.jpeg (NORMAL)
 
@@ -64,6 +68,6 @@
       1. CARDIOMEGALY: https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ6_VORjCjpBRMP7tQE4BGzXTDPCya9LfPeC4pV7j36zkD18deQGMu35ws_&s=10
       2. COVID19: 
       3. NORMAL: https://thumbs.dreamstime.com/b/chest-ray-normal-medical-concept-female-year-old-there-no-pulmonary-infiltration-heart-size-both-costophrenic-angles-138200478.jpg
-      4. PNEUMONIA: https://storage.googleapis.com/kagglesdsdata/datasets/17810/23812/chest_xray/test/PNEUMONIA/person109_bacteria_526.jpeg?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=databundle-worker-v2%40kaggle-161607.iam.gserviceaccount.com%2F20260914%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20260914T095211Z&X-Goog-Expires=345600&X-Goog-SignedHeaders=host&X-Goog-Signature=4c632b2166062bddce60754afe4e6937bb4c9f38209e1231117c66833015f283c0b25a36b44cfe93d8f130ac8f586e8c0c774a463dc6287d3cac60f78389b606dce0c43126e7729148521e536881376b0aaeb8a9cd9c21dcb82e4089622a8768bca1feaa2b64374a27be4312d912d0feef3d6eb9dee2fec9a8b48b3112f6cfbf0a139e5f6fcaeb951aa6bb7eaafc957dfa2f10e9f1baebb3317e32f543242e7fa05e0e02c65d7e9409896785f2c5ea8c8e221a275d7cd886f47a28363d41c979bf7bc323a74c2c95c06438deb68ffe59dfcfd7afce40b6b16c93f6a9181d35208bb357ed76961fb113d0f35cb6a413ee114296ea226aca799fa73e3d6823e394
+      4. PNEUMONIA: 
       5. TUBERCULOSIS: 
 

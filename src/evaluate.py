@@ -12,7 +12,7 @@ import seaborn as sns
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix, classification_report, roc_curve, auc
 from sklearn.preprocessing import label_binarize
 
-from global_variables import GRAPH_DIR, TRAINED_MODEL_PATH, CLASS_INDEX_FILE, DATASET_DIR, ACC_GRAPH, PRECISION_GRAPH, RECALL_GRAPH, F1_GRAPH, CM_GRAPH, TEST_SAVED_PATH
+from global_variables import GRAPH_DIR, TRAINED_MODEL_PATH, CLASS_INDEX_FILE, DATASET_DIR, ACC_GRAPH, PRECISION_GRAPH, RECALL_GRAPH, F1_GRAPH, CM_GRAPH, TEST_SAVED_PATH, MODEL_DIR
 from global_variables import start_partition, end_partition
 
 # **************************************
@@ -25,7 +25,7 @@ print(model)
 end_partition()
 
 # Load class index mapping saved by train.py
-class_index_path = os.path.join(TRAINED_MODEL_PATH, CLASS_INDEX_FILE)
+class_index_path = os.path.join(MODEL_DIR, CLASS_INDEX_FILE)
 with open(class_index_path, "r") as f:
     index_to_class = {int(k): v for k, v in json.load(f).items()}
 class_names = [index_to_class[i] for i in range(len(index_to_class))]
@@ -66,7 +66,7 @@ def plot_metric(bar, metrics, color, title, graph):
     plt.ylim(0, 1)
     plt.ylabel("Score")
     plt.title(title)
-    plt.text(0, metrics + 0.02, f"{accuracy:.4f}", ha="center")
+    plt.text(0, metrics + 0.02, f"{metrics:.4f}", ha="center")
     plt.tight_layout()
     plt.savefig(os.path.join(GRAPH_DIR, f"evaluation_{graph}"))
     plt.show()

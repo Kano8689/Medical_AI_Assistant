@@ -29,7 +29,7 @@ from tensorflow.keras.callbacks import TensorBoard, EarlyStopping, ModelCheckpoi
 from global_variables import DATASET_DIR, CATEGORIES, NUM_CLASSES, TEST_SAVED_PATH
 from global_variables import TEST_SPLIT, VAL_FROM_TEMP_SPLIT
 from global_variables import IMAGE_SIZE, BATCH_SIZE, EPOCHS, LEARNING_RATE, EARLY_STOPPING_PATIENCE
-from global_variables import LOG_DIR, GRAPH_DIR, CLASS_INDEX_FILE
+from global_variables import LOG_DIR, GRAPH_DIR, CLASS_INDEX_FILE, MODEL_DIR
 from global_variables import BEST_MODEL_PATH, FINAL_BEST_MODEL_PATH, TRAINED_MODEL_PATH
 from global_variables import ACC_GRAPH, PRECISION_GRAPH, RECALL_GRAPH, F1_GRAPH, LOSS_GRAPH, AUG_GRAPH, CLASS_DIST_GRAPH,ORIGINAL_IMAGES_GRAPH
 from global_variables import REDUCE_LR_FACTOR, REDUCE_LR_PATIENCE, MIN_LR
@@ -61,16 +61,15 @@ for label, cat_name in enumerate(CATEGORIES):
                 raise ValueError("cv2.imread returned None (corrupt or unreadable file)")
 
             img = cv2.resize(img, (IMAGE_SIZE, IMAGE_SIZE))
-            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)  # <-- ADD THIS: Convert BGR to RGB first
 
-            # Save a copy of the ORIGINAL (resized, RGB, but not yet contrast-enhanced/normalized) 
-            # image for display purposes.
+            # Save a copy of the ORIGINAL image for display
             if len(sample_originals) < MAX_DISPLAY_SAMPLES:
                 sample_originals.append(img.copy())
                 sample_labels_display.append(cat_name)
 
-            # L = Lightness (brightness) | A = Green <-> Red | B = Blue <-> Yellow
-            lab = cv2.cvtColor(img, cv2.COLOR_RGB2LAB)
+            # Convert RGB -> LAB -> CLAHE -> RGB
+            lab = cv2.cvtColor(img, cv2.COLOR_RGB2LAB)  # <-- CHANGED: BGR2LAB -> RGB2LAB
             l, a, b = cv2.split(lab)
 
             # CLAHE (Contrast Limited Adaptive Histogram Equalization)
@@ -233,11 +232,12 @@ plt.show()
 model = Sequential([
     # BLOCK 1
     Conv2D(
-            32,
-            (3, 3),
-            activation='relu',
-            kernel_regularizer=l2(0.0001),
-            input_shape=(IMAGE_SIZE, IMAGE_SIZE, 3)
+        32,
+        (3, 3),
+        padding = 'same',
+        activation='relu',
+        kernel_regularizer=l2(0.0001),
+        input_shape=(IMAGE_SIZE, IMAGE_SIZE, 3)
     ),
     BatchNormalization(),
     MaxPooling2D((2, 2)),
@@ -247,6 +247,7 @@ model = Sequential([
     Conv2D(
         64,
         (3, 3),
+        padding = 'same',
         activation='relu',
         kernel_regularizer=l2(0.0001)
     ),
@@ -258,6 +259,7 @@ model = Sequential([
     Conv2D(
         128,
         (3, 3),
+        padding = 'same',
         activation='relu',
         kernel_regularizer=l2(0.0001)
     ),
@@ -269,6 +271,7 @@ model = Sequential([
     Conv2D(
         256,
         (3, 3),
+        padding = 'same',
         activation='relu',
         kernel_regularizer=l2(0.0001)
     ),
@@ -282,11 +285,11 @@ model = Sequential([
 
     # ----- DENSE LAYER -----
     Dense(
-        256,
+        512,
         activation="relu",
         kernel_regularizer=l2(0.0001)
     ),
-    # BatchNormalization(),
+    BatchNormalization(),
     Dropout(0.40),
 
     # ----- OUTPUT LAYER (dynamic: binary or multi-class) -----
@@ -336,7 +339,7 @@ early_stopping_cb = EarlyStopping(
 
 best_model_path = os.path.join(BEST_MODEL_PATH)
 model_checkpoint_cb = ModelCheckpoint(
-    best_model_path,
+    TRAINED_MODEL_PATH,
     monitor="val_loss",
     save_best_only=True,
     verbose=1
@@ -412,7 +415,7 @@ val_f1 = [
     for p, r in zip(train_model.history["val_precision"], train_model.history["val_recall"])
 ]
 
-plot_metric("F1 Score", train_f1, val_f1, "Training vs Validation F1 Score", f"train_{ACC_GRAPH}", True)
+plot_metric("F1 Score", train_f1, val_f1, "Training vs Validation F1 Score", f"train_{F1_GRAPH}", True)
 
 
 
@@ -435,9 +438,9 @@ end_partition()
 # Needed by predict.py / evaluate.py to convert a predicted index
 # back into a human-readable class name.
 # class_index_path = os.path.join(gv.TRAINED_MODEL_PATH, gv.CLASS_INDEX_FILE)
-class_index_path = os.path.join(TRAINED_MODEL_PATH, CLASS_INDEX_FILE)
+class_index_path = os.path.join(MODEL_DIR, CLASS_INDEX_FILE)
 index_to_class = {i: name for i, name in enumerate(CATEGORIES)}
-with open(CLASS_INDEX_FILE, "w") as f:
+with open(class_index_path, "w") as f:
     json.dump(index_to_class, f, indent=2)
 
 start_partition("CLASS INDEX MAPPING SAVED")
