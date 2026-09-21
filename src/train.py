@@ -367,7 +367,8 @@ train_model = model.fit(
      epochs=EPOCHS,
      validation_data=(X_val, y_val_fit),
      class_weight=class_weight_dict,
-     callbacks=[early_stopping_cb, model_checkpoint_cb, reduce_lr_cb, tensorboard_cb]
+    #  callbacks=[early_stopping_cb, model_checkpoint_cb, reduce_lr_cb, tensorboard_cb]
+     callbacks=[model_checkpoint_cb, reduce_lr_cb, tensorboard_cb]
 )
 
 print(train_model.history)
