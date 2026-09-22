@@ -1,73 +1,73 @@
+# global_variables.py
+import os
+
 # ******************************************************
 # ===== LOG PARTITION =====
 # ******************************************************
 def start_partition(title):
-      print("\n")
-      print("="*100)
-      print("-"*35, end=" ")
-      print(f"{title}", end=" ")
-      print("-"*35)
-      print("="*100)
+    print("\n")
+    print("="*100)
+    print("-"*35, end=" ")
+    print(f"{title}", end=" ")
+    print("-"*35)
+    print("="*100)
 
 def end_partition():
-      print("*"*100)
-      print("\n")
-
-
+    print("*"*100)
+    print("\n")
 
 # ******************************************************
 # ===== DATASET PATH =====
 # ******************************************************
-BASE_DIR = r"C:\\Users\Krishnam Mavani\Documents\Projects\Medical_AI_Assistant"
+CURRENT_FILE = os.path.abspath(__file__)
+SRC_DIR = os.path.dirname(CURRENT_FILE)
+BASE_DIR = os.path.dirname(SRC_DIR)
 
-DATASET_DIR = rf"{BASE_DIR}\dataset"
-SPLITED_DATASET = rf"{BASE_DIR}\splited_dataset"
-TEST_SAVED_PATH = rf"{BASE_DIR}\test_saved_data"
+DATASET_DIR = os.path.join(BASE_DIR, "dataset")
+MODEL_DIR = os.path.join(BASE_DIR, "models")
+GRAPH_DIR = os.path.join(BASE_DIR, "graphs")
+LOG_DIR = os.path.join(BASE_DIR, "logs")
+TEST_SAVED_PATH = os.path.join(BASE_DIR, "test_saved_data")
+SPLITED_DATASET = os.path.join(BASE_DIR, "splited_dataset")
+EXTERNAL_TEST_DIR = os.path.join(BASE_DIR, "external_test_dataset")
 
-# SPLITED_TRAIN_DATASET = r"C:\\Users\Krishnam Mavani\Documents\Projects\Medical_AI_Assistant\splited_dataset"
-# SPLITED_VAL_DATASET = r"C:\\Users\Krishnam Mavani\Documents\Projects\Medical_AI_Assistant\splited_dataset"
-# SPLITED_TEST_DATASET = r"C:\\Users\Krishnam Mavani\Documents\Projects\Medical_AI_Assistant\splited_dataset"
-
-
-CARDIOMEGALY = "CARDIOMEGALY"
-COVID19 = "COVID19"
+# Disease categories
 NORMAL = "NORMAL"
 PNEUMONIA = "PNEUMONIA"
 TUBERCULOSIS = "TUBERCULOSIS"
+CARDIOMEGALY = "CARDIOMEGALY"
 
-CATEGORIES = [
-      NORMAL,
-      PNEUMONIA,
-      COVID19,
-      TUBERCULOSIS,
-      CARDIOMEGALY,
-]
+CATEGORIES = [NORMAL, PNEUMONIA, TUBERCULOSIS, CARDIOMEGALY]
 NUM_CLASSES = len(CATEGORIES)
-
-
 
 # ******************************************************
 # ===== PREPROCESS VARIABLES =====
 # ******************************************************
 IMAGE_SIZE = 224
 BATCH_SIZE = 32
-EPOCHS = 50
+EPOCHS = 30
+L2_REG = 5e-4
+LEARNING_RATE = 1e-4
+LABEL_SMOOTHING = 0.1
+DROPOUT_HEAD = 0.5
 
-# ----- TRAIN / VAL / TEST SPLIT -----
-TEST_SPLIT = 0.30
+TEST_SPLIT = 0.20
 VAL_FROM_TEMP_SPLIT = 0.50
+SPLIT_BY_PATIENT = False
 
-# ----- CALLBACK SETTINGS -----
-EARLY_STOPPING_PATIENCE = 8
-REDUCE_LR_PATIENCE = 3
+EARLY_STOPPING_PATIENCE = 10
+REDUCE_LR_PATIENCE = 4
 REDUCE_LR_FACTOR = 0.5
 MIN_LR = 1e-7
-LEARNING_RATE = 0.0005
+
+AUGMENTATION_ROTATION = 15
+AUGMENTATION_ZOOM = 0.15
+AUGMENTATION_SHIFT = 0.1
+AUGMENTATION_FLIP = True
 
 # ******************************************************
 # ===== GRAPH PATH =====
 # ******************************************************
-GRAPH_DIR = rf"{BASE_DIR}\\graphs"
 ACC_GRAPH = "accuracy_graph.png"
 LOSS_GRAPH = "loss_graph.png"
 PRECISION_GRAPH = "precision_graph.png"
@@ -76,24 +76,16 @@ F1_GRAPH = "f1_graph.png"
 CM_GRAPH = "confusion_matrix.png"
 AUG_GRAPH = "augmentation_examples.png"
 CLASS_DIST_GRAPH = "class_distribution.png"
-ORIGINAL_IMAGES_GRAPH = "original_images.png"
-PREPROCESSED_IMAGES_GRAPH = "preprocessed_images.png"
+ORIGINAL_IMAGES_GRAPH = "original_vs_preprocessed.png"
 TRAINNING_ACC = "Training_and_Validation_Accuracy.png"
-
-
 
 # ******************************************************
 # ===== TRAIN MODEL PATH =====
 # ******************************************************
-MODEL_DIR = rf"{BASE_DIR}\\models"
-BEST_MODEL_PATH = rf"{MODEL_DIR}\\best_model.keras"
-FINAL_BEST_MODEL_PATH = rf"{MODEL_DIR}\\final_model.keras"
-TRAINED_MODEL_PATH = rf"{MODEL_DIR}\\medical_ai_cnn.keras"
-
-
+BEST_MODEL_PATH = os.path.join(MODEL_DIR, "best_model.keras")
+TRAINED_MODEL_PATH = os.path.join(MODEL_DIR, "medical_ai_cnn.keras")
 
 # ******************************************************
 # ===== LOG DIRECTORY PATH =====
 # ******************************************************
-LOG_DIR = "logs"
 CLASS_INDEX_FILE = "class_indices.json"
