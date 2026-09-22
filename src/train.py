@@ -113,11 +113,19 @@ X_test, X_val, y_test, y_val = train_test_split(
     X_temp, y_temp, test_size=VAL_FROM_TEMP_SPLIT, random_state=42, stratify=y_temp
 )
 
+
 start_partition("DATASET SHAPE")
+
 print(f"Original Dataset Shape: {X.shape}")
 print(f"X_train Dataset Shape: {X_train.shape}")
 print(f"X_val Dataset Shape: {X_val.shape}")
 print(f"X_test Dataset Shape: {X_test.shape}")
+
+print("X_train:", X_train.shape)
+print("y_train:", y_train.shape)
+print("Unique labels:", np.unique(y_train))
+print("First 10 labels:", y_train[:10])
+
 end_partition()
 
 # ******************************************************
@@ -264,6 +272,12 @@ model.compile(
     loss="categorical_crossentropy",
     metrics=["accuracy", Precision(name="precision"), Recall(name="recall"), AUC(name="auc")]
 )
+
+# CHECK HERE
+print(y_train.shape)
+print(y_train[:10])
+print(np.unique(y_train))
+print(model.loss)
 
 # ******************************************************
 # ===== STEP 10: CALLBACKS =====
