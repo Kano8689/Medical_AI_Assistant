@@ -1,0 +1,10 @@
+              precision    recall  f1-score   support
+
+      NORMAL       0.00      0.00      0.00       158
+   PNEUMONIA       0.25      1.00      0.40       244
+TUBERCULOSIS       0.00      0.00      0.00       333
+CARDIOMEGALY       0.00      0.00      0.00       232
+
+    accuracy                           0.25       967
+   macro avg       0.06      0.25      0.10       967
+weighted avg       0.06      0.25      0.10       967
