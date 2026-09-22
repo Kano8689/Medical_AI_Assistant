@@ -1,73 +1,65 @@
-# global_variables.py
-import os
-
-# ******************************************************
-# ===== LOG PARTITION =====
-# ******************************************************
 def start_partition(title):
-    print("\n")
-    print("="*100)
-    print("-"*35, end=" ")
-    print(f"{title}", end=" ")
-    print("-"*35)
-    print("="*100)
+      print("\n")
+      print("="*100)
+      print("-"*35, end=" ")
+      print(f"{title}", end=" ")
+      print("-"*35)
+      print("="*100)
 
 def end_partition():
-    print("*"*100)
-    print("\n")
+      print("*"*100)
+      print("\n")
+
 
 # ******************************************************
 # ===== DATASET PATH =====
 # ******************************************************
-CURRENT_FILE = os.path.abspath(__file__)
-SRC_DIR = os.path.dirname(CURRENT_FILE)
-BASE_DIR = os.path.dirname(SRC_DIR)
+DATASET_DIR = r"C:\\Users\Krishnam Mavani\Documents\Projects\Medical_AI_Assistant\dataset"
+SPLITED_DATASET = r"C:\\Users\Krishnam Mavani\Documents\Projects\Medical_AI_Assistant\splited_dataset"
 
-DATASET_DIR = os.path.join(BASE_DIR, "dataset")
-MODEL_DIR = os.path.join(BASE_DIR, "models")
-GRAPH_DIR = os.path.join(BASE_DIR, "graphs")
-LOG_DIR = os.path.join(BASE_DIR, "logs")
-TEST_SAVED_PATH = os.path.join(BASE_DIR, "test_saved_data")
-SPLITED_DATASET = os.path.join(BASE_DIR, "splited_dataset")
-EXTERNAL_TEST_DIR = os.path.join(BASE_DIR, "external_test_dataset")
+SPLITED_TRAIN_DATASET = r"C:\\Users\Krishnam Mavani\Documents\Projects\Medical_AI_Assistant\splited_dataset"
+SPLITED_VAL_DATASET = r"C:\\Users\Krishnam Mavani\Documents\Projects\Medical_AI_Assistant\splited_dataset"
+SPLITED_TEST_DATASET = r"C:\\Users\Krishnam Mavani\Documents\Projects\Medical_AI_Assistant\splited_dataset"
 
-# Disease categories
+TEST_SAVED_PATH = r"C:\\Users\Krishnam Mavani\Documents\Projects\Medical_AI_Assistant\test_saved_data"
+
+CARDIOMEGALY = "CARDIOMEGALY"
+COVID19 = "COVID19"
 NORMAL = "NORMAL"
 PNEUMONIA = "PNEUMONIA"
 TUBERCULOSIS = "TUBERCULOSIS"
-CARDIOMEGALY = "CARDIOMEGALY"
 
-CATEGORIES = [NORMAL, PNEUMONIA, TUBERCULOSIS, CARDIOMEGALY]
+CATEGORIES = [
+      NORMAL,
+      PNEUMONIA,
+      COVID19,
+      TUBERCULOSIS,
+      CARDIOMEGALY,
+]
 NUM_CLASSES = len(CATEGORIES)
 
 # ******************************************************
 # ===== PREPROCESS VARIABLES =====
 # ******************************************************
-IMAGE_SIZE = 224
+IMAGE_SIZE = 128
 BATCH_SIZE = 32
-EPOCHS = 30
-L2_REG = 5e-4
-LEARNING_RATE = 1e-4
-LABEL_SMOOTHING = 0.1
-DROPOUT_HEAD = 0.5
+EPOCHS = 50
 
-TEST_SPLIT = 0.20
+# ----- TRAIN / VAL / TEST SPLIT -----
+TEST_SPLIT = 0.30
 VAL_FROM_TEMP_SPLIT = 0.50
-SPLIT_BY_PATIENT = False
 
-EARLY_STOPPING_PATIENCE = 10
+# ----- CALLBACK SETTINGS -----
+EARLY_STOPPING_PATIENCE = 8
 REDUCE_LR_PATIENCE = 4
 REDUCE_LR_FACTOR = 0.5
 MIN_LR = 1e-7
-
-AUGMENTATION_ROTATION = 15
-AUGMENTATION_ZOOM = 0.15
-AUGMENTATION_SHIFT = 0.1
-AUGMENTATION_FLIP = True
+LEARNING_RATE = 0.001
 
 # ******************************************************
 # ===== GRAPH PATH =====
 # ******************************************************
+GRAPH_DIR = r"C:\\Users\Krishnam Mavani\Documents\Projects\Medical_AI_Assistant\graphs"
 ACC_GRAPH = "accuracy_graph.png"
 LOSS_GRAPH = "loss_graph.png"
 PRECISION_GRAPH = "precision_graph.png"
@@ -76,16 +68,20 @@ F1_GRAPH = "f1_graph.png"
 CM_GRAPH = "confusion_matrix.png"
 AUG_GRAPH = "augmentation_examples.png"
 CLASS_DIST_GRAPH = "class_distribution.png"
-ORIGINAL_IMAGES_GRAPH = "original_vs_preprocessed.png"
+ORIGINAL_IMAGES_GRAPH = "original_images.png"
+PREPROCESSED_IMAGES_GRAPH = "preprocessed_images.png"
 TRAINNING_ACC = "Training_and_Validation_Accuracy.png"
+
 
 # ******************************************************
 # ===== TRAIN MODEL PATH =====
 # ******************************************************
-BEST_MODEL_PATH = os.path.join(MODEL_DIR, "best_model.keras")
-TRAINED_MODEL_PATH = os.path.join(MODEL_DIR, "medical_ai_cnn.keras")
+BEST_MODEL_PATH = r"C:\Users\Krishnam Mavani\Documents\Projects\Medical_AI_Assistant\models\\best_model.keras"
+FINAL_BEST_MODEL_PATH = r"C:\\Users\Krishnam Mavani\Documents\Projects\Medical_AI_Assistant\models\final_model.keras"
+TRAINED_MODEL_PATH = r"C:\Users\Krishnam Mavani\Documents\Projects\Medical_AI_Assistant\models\medical_ai_cnn.keras"
 
 # ******************************************************
 # ===== LOG DIRECTORY PATH =====
 # ******************************************************
-CLASS_INDEX_FILE = "class_indices.json"
+LOG_DIR = "logs"
+CLASS_INDEX_FILE = r"C:\\Users\Krishnam Mavani\Documents\Projects\Medical_AI_Assistant\models\\class_indices.json"

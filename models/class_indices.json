@@ -1,6 +1,7 @@
 {
   "0": "NORMAL",
   "1": "PNEUMONIA",
-  "2": "TUBERCULOSIS",
-  "3": "CARDIOMEGALY"
+  "2": "COVID19",
+  "3": "TUBERCULOSIS",
+  "4": "CARDIOMEGALY"
 }
