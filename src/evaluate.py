@@ -23,7 +23,7 @@ from sklearn.metrics import (
 )
 from sklearn.preprocessing import label_binarize
 
-from global_variables import GRAPH_DIR, TRAINED_MODEL_PATH, CLASS_INDEX_FILE, DATASET_DIR, ACC_GRAPH, PRECISION_GRAPH, RECALL_GRAPH, F1_GRAPH, CM_GRAPH, TEST_SAVED_PATH
+from global_variables import GRAPH_DIR, TRAINED_MODEL_PATH, MODEL_DIR, CLASS_INDEX_FILE, ACC_GRAPH, PRECISION_GRAPH, RECALL_GRAPH, F1_GRAPH, CM_GRAPH, TEST_SAVED_PATH
 from global_variables import start_partition, end_partition
 
 # **************************************
@@ -36,7 +36,7 @@ print(model)
 end_partition()
 
 # Load class index mapping saved by train.py
-class_index_path = os.path.join(TRAINED_MODEL_PATH, CLASS_INDEX_FILE)
+class_index_path = os.path.join(MODEL_DIR, CLASS_INDEX_FILE)
 with open(class_index_path, "r") as f:
     index_to_class = {int(k): v for k, v in json.load(f).items()}
 class_names = [index_to_class[i] for i in range(len(index_to_class))]
@@ -79,77 +79,42 @@ end_partition()
 # **************************************
 # ===== STEP 5: EVALUATION METRICS =====
 # **************************************
+def plot_metric_bar(metric_name, value, color, filename):
+    plt.figure(figsize=(4, 4))
+    plt.bar([metric_name], [value], color=color)
+    plt.ylim(0, 1)
+    plt.ylabel("Score")
+    plt.title(f"{metric_name} Score")
+    plt.text(0, value + 0.02, f"{value:.4f}", ha="center", fontsize=12)
+    plt.tight_layout()
+    plt.savefig(os.path.join(GRAPH_DIR, f"evaluation_{filename}"))
+    plt.show()
+
 start_partition("EVALUATION METRICS")
 
-# ----- ACCURACY -----
 accuracy = accuracy_score(y_test, y_pred)
 print(f"Accuracy Score: {accuracy:.4f}")
+plot_metric_bar("Accuracy", accuracy, "green", ACC_GRAPH)
 
-plt.figure(figsize=(4, 4))
-plt.bar(["Accuracy"], [accuracy], color="green")
-plt.ylim(0, 1)
-plt.ylabel("Score")
-plt.title("Accuracy Score")
-plt.text(0, accuracy + 0.02, f"{accuracy:.4f}", ha="center")
-plt.tight_layout()
-plt.savefig(os.path.join(GRAPH_DIR, f"evaluation_{ACC_GRAPH}"))
-plt.show()
-
-# ----- PRECISION -----
 precision = precision_score(y_test, y_pred, average=avg_method, zero_division=0)
 print(f"Precision Score: {precision:.4f}")
+plot_metric_bar("Precision", precision, "royalblue", PRECISION_GRAPH)
 
-plt.figure(figsize=(4, 4))
-plt.bar(["Precision"], [precision], color="royalblue")
-plt.ylim(0, 1)
-plt.ylabel("Score")
-plt.title("Precision Score")
-plt.text(0, precision + 0.02, f"{precision:.4f}", ha="center")
-plt.tight_layout()
-plt.savefig(os.path.join(GRAPH_DIR, f"evaluation_{PRECISION_GRAPH}"))
-plt.show()
-
-# ----- RECALL -----
 recall = recall_score(y_test, y_pred, average=avg_method, zero_division=0)
 print(f"Recall Score: {recall:.4f}")
+plot_metric_bar("Recall", recall, "orange", RECALL_GRAPH)
 
-plt.figure(figsize=(4, 4))
-plt.bar(["Recall"], [recall], color="orange")
-plt.ylim(0, 1)
-plt.ylabel("Score")
-plt.title("Recall Score")
-plt.text(0, recall + 0.02, f"{recall:.4f}", ha="center")
-plt.tight_layout()
-plt.savefig(os.path.join(GRAPH_DIR, f"evaluation_{RECALL_GRAPH}"))
-plt.show()
-
-# ----- F1 SCORE (graph was missing before - added here) -----
 f1 = f1_score(y_test, y_pred, average=avg_method, zero_division=0)
 print(f"F1 Score: {f1:.4f}")
+plot_metric_bar("F1 Score", f1, "purple", F1_GRAPH)
 
-plt.figure(figsize=(4, 4))
-plt.bar(["F1 Score"], [f1], color="purple")
-plt.ylim(0, 1)
-plt.ylabel("Score")
-plt.title("F1 Score")
-plt.text(0, f1 + 0.02, f"{f1:.4f}", ha="center")
-plt.tight_layout()
-plt.savefig(os.path.join(GRAPH_DIR, f"evaluation_{F1_GRAPH}"))
-plt.show()
-
-# ----- CONFUSION MATRIX -----
 cm = confusion_matrix(y_test, y_pred)
-print(f"Confusion Matrix:\n{cm}")
+print(f"\nConfusion Matrix:\n{cm}")
 
-plt.figure(figsize=(7, 6))
-sns.heatmap(
-    cm,
-    annot=True,
-    cmap="Blues",
-    fmt="d",
-    xticklabels=class_names,
-    yticklabels=class_names
-)
+plt.figure(figsize=(8, 7))
+sns.heatmap(cm, annot=True, cmap="Blues", fmt="d",
+            xticklabels=class_names, yticklabels=class_names,
+            annot_kws={"size": 12})
 plt.xlabel("Predicted")
 plt.ylabel("Actual")
 plt.title("Confusion Matrix")
@@ -157,9 +122,8 @@ plt.tight_layout()
 plt.savefig(os.path.join(GRAPH_DIR, f"evaluation_{CM_GRAPH}"))
 plt.show()
 
-# ----- CLASSIFICATION REPORT -----
 cr = classification_report(y_test, y_pred, target_names=class_names, zero_division=0)
-print(f"Classification Report:\n{cr}")
+print(f"\nClassification Report:\n{cr}")
 
 with open(os.path.join(GRAPH_DIR, "classification_report.txt"), "w") as f:
     f.write(cr)

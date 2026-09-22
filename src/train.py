@@ -33,8 +33,8 @@ from tensorflow.keras.callbacks import (
 from global_variables import DATASET_DIR, CATEGORIES, NUM_CLASSES, TEST_SAVED_PATH
 from global_variables import TEST_SPLIT, VAL_FROM_TEMP_SPLIT
 from global_variables import IMAGE_SIZE, BATCH_SIZE, EPOCHS, LEARNING_RATE, EARLY_STOPPING_PATIENCE
-from global_variables import LOG_DIR, GRAPH_DIR, CLASS_INDEX_FILE
-from global_variables import BEST_MODEL_PATH, FINAL_BEST_MODEL_PATH, TRAINED_MODEL_PATH
+from global_variables import LOG_DIR, GRAPH_DIR, CLASS_INDEX_FILE,MODEL_DIR
+from global_variables import BEST_MODEL_PATH, TRAINED_MODEL_PATH
 from global_variables import ACC_GRAPH, PRECISION_GRAPH, RECALL_GRAPH, F1_GRAPH, LOSS_GRAPH, AUG_GRAPH, CLASS_DIST_GRAPH,ORIGINAL_IMAGES_GRAPH
 from global_variables import REDUCE_LR_FACTOR, REDUCE_LR_PATIENCE, MIN_LR
 from global_variables import start_partition, end_partition
@@ -427,10 +427,10 @@ end_partition()
 # ******************************************************
 # Needed by predict.py / evaluate.py to convert a predicted index
 # back into a human-readable class name.
-# class_index_path = os.path.join(gv.TRAINED_MODEL_PATH, gv.CLASS_INDEX_FILE)
-class_index_path = os.path.join(TRAINED_MODEL_PATH, CLASS_INDEX_FILE)
+# class_index_path = os.path.join(gv.TRAINED_MODEL_PATH, gv.MODEL_DIR)
+class_index_path = os.path.join(MODEL_DIR, CLASS_INDEX_FILE)
 index_to_class = {i: name for i, name in enumerate(CATEGORIES)}
-with open(CLASS_INDEX_FILE, "w") as f:
+with open(MODEL_DIR, "w") as f:
     json.dump(index_to_class, f, indent=2)
 
 start_partition("CLASS INDEX MAPPING SAVED")
