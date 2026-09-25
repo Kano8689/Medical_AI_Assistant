@@ -7,72 +7,24 @@
 
 
 * TRUE PREDICTION:
-      1. CARDIOMEGALY: https://prod-images-static.radiopaedia.org/images/1420387/6f63736ff837ff7c5a736b35aba6ab_big_gallery.jpeg
-      2. COVID19: https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRGR2o-lg8VH5OZ68FfPZSmjdt7fS8iwNtDmpNiOcTGNQ&s
-      3. NORMAL: https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTr3dETmNERqd8HQch6H8Xl-K5BodWSNpe0CKnODe4kTyNlKQ4-x-SKqFRZ&s=10
-      4. PNEUMONIA: 
+      1. CARDIOMEGALY: https://prod-images-static.radiopaedia.org/images/24070732/b8abe6f1628931f37515588a9d4b52_big_gallery.jpeg
+      2. COVID19: https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR_3UFO8zHJ7IORShm64YecXpQLxk9fneWiVVFeK60m3A2VwK0vvyCbp8M&s=10
+      3. NORMAL: https://prod-images-static.radiopaedia.org/images/62892120/6ac18c7f8a1841a795a4271fb045a3202a7fd4a4f077b6e8b47eca5409243df8_gallery.jpeg
+      4. PNEUMONIA: https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSUw3wjvzZSz95yN3bNF1hr6mAvvbpiEZKNPeqZvZMojW2fqjg-ESIojEus&s=10
       5. TUBERCULOSIS: https://assets.cureus.com/uploads/figure/file/651404/article_river_6c974b30023911eebb02a5aa499cd123-Tuberculosis-10-rk-900.png
 
       
 
 
 * WRONG PREDICTION:
-      1. CARDIOMEGALY: https://prod-images-static.radiopaedia.org/images/24070732/b8abe6f1628931f37515588a9d4b52_big_gallery.jpeg (TUBERCULOSIS)
-
-      2. COVID19: https://www.itnonline.com/sites/default/files/Chest.jpeg (PNEUMONIA) | (NORMAL) | (CARDIOMEGALY)
-
-      3. NORMAL:  https://assets.cureus.com/uploads/figure/file/651403/article_river_45667cc0023911ee981ccd727650008e-Normal-1-rk-950.png (CARDIOMEGALY)
-      
-      4. PNEUMONIA: https://prod-images-static.radiopaedia.org/images/1371188/0a1f5edc85aa58d5780928cb39b08659c1fc4d6d7c7dce2f8db1d63c7c737234_big_gallery.jpeg (CARDIOMEGALY)
-      
-      5. TUBERCULOSIS: https://prod-images-static.radiopaedia.org/images/56848814/miliary_TB_big_gallery.jpeg (NORMAL)
+      1. CARDIOMEGALY: https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTJOeN08Tcv0uEM14vMlh_HyU99KjzbwOVlDguLOXI8gg&s
+      2. COVID19: https://www.itnonline.com/sites/default/files/Chest.jpeg
+      3. NORMAL:  https://assets.cureus.com/uploads/figure/file/651403/article_river_45667cc0023911ee981ccd727650008e-Normal-1-rk-950.png
+      4. PNEUMONIA: https://prod-images-static.radiopaedia.org/images/1371188/0a1f5edc85aa58d5780928cb39b08659c1fc4d6d7c7dce2f8db1d63c7c737234_big_gallery.jpeg
+      5. TUBERCULOSIS: https://prod-images-static.radiopaedia.org/images/56848814/miliary_TB_big_gallery.jpeg
 
 
 
 * DIFFERET CATEGORY:
       1. Lung Cancer: https://prod-images-static.radiopaedia.org/images/59513800/a4e50ccdd7905a42e4ec9fc72e88ed8c37fbc2f2c5c43b1f16597d2d31ead34e_big_gallery.jpeg
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-* BACKUP
-      1. CARDIOMEGALY: https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ6_VORjCjpBRMP7tQE4BGzXTDPCya9LfPeC4pV7j36zkD18deQGMu35ws_&s=10
-      2. COVID19: 
-      3. NORMAL: https://www.kenhub.com/thumbor/AkXFsw0396y894sLEMWlcDuChJA=/fit-in/800x1600/filters:watermark(/images/logo_url.png,-10,-10,0):background_color(FFFFFF):format(jpeg)/images/library/10851/eXtmE1V2XgsjZK2JolVQ5g_Border_of_left_atrium.png
-      4. PNEUMONIA: 
-      5. TUBERCULOSIS: 
-
-
-      3. NORMAL: https://thumbs.dreamstime.com/b/chest-ray-normal-medical-concept-female-year-old-there-no-pulmonary-infiltration-heart-size-both-costophrenic-angles-138200478.jpg
